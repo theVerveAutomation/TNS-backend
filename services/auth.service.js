@@ -3,6 +3,7 @@ import { hashPassword, comparePassword, validatePassword } from "../utils/passwo
 import { User } from "../models/User.js";
 import { AuthLog } from "../models/AuthLog.js";
 import { AppError } from "../utils/AppError.js";
+import bcrypt from "bcrypt";
 
 export const registerUser = async (username, password) => {
     // Check if user already exists
@@ -94,7 +95,10 @@ export const loginUser = async (username, password, req) => {
 };
 
 export const changePassword = async (userId, newPassword) => {
-    const user = await User.findByPk(userId);
+    const user = await User.findOne({ where: { username: username } });
+    if (!user) {
+        throw new AppError(404, `User not found with username: ${username}`);
+    }
     validatePassword(newPassword, user.username);
     // ❌ REUSE CHECK
     const historyArr = Array.isArray(user.passwordHistory) ? user.passwordHistory : [];

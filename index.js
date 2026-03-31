@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
-import authRoutes from "./routes/auth.routes.js";
+import authRoutes, { forgotPasswordRoute, resetPasswordRoute } from "./routes/auth.routes.js";
 import alertRoutes from "./routes/alert.routes.js";
 import auditLogRoutes from "./routes/auditlog.routes.js";
 import authLogRoutes from "./routes/authlog.routes.js";
@@ -31,6 +31,10 @@ app.use(cookieParser());
 
 // Apply rate limiter only on login
 app.use("/api/auth/login", loginLimiter);
+
+// Public routes (no auth)
+app.use("/api/auth/forgot-password", forgotPasswordRoute);
+app.use("/api/auth/reset-password", resetPasswordRoute);
 
 // Routes
 app.use("/api/auth", protect, sessionTimeout, authRoutes);
@@ -73,7 +77,7 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 
 sequelize
-    .sync({ alter: true }) // Updates tables without dropping data
+    .sync({ alter: true })
     .then(() => console.log("✅ Database & tables synced successfully!"))
     .catch((err) => console.error("❌ Error syncing database:", err));
 

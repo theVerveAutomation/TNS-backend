@@ -4,7 +4,9 @@ import {
     register,
     login,
     changePassword,
-    logout
+    logout,
+    forgotPassword,
+    resetPassword
 } from "../controllers/auth.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
@@ -22,5 +24,11 @@ router.post("/change-password", protect, changePassword);
 
 // 🔐 Logout
 router.post("/logout", protect, logout);
+
+export const forgotPasswordRoute = express.Router();
+forgotPasswordRoute.post("/", forgotPassword);
+
+export const resetPasswordRoute = express.Router();
+resetPasswordRoute.post("/", resetPassword);
 
 export default router;

@@ -6,9 +6,9 @@ import {
 } from "../services/auth.service.js";
 
 import { generateToken } from "../utils/token.js";
+import { requestPasswordReset, resetPasswordService } from "../services/passwordReset.service.js";
 
 
-// ✅ REGISTER
 export const register = async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -30,7 +30,6 @@ export const register = async (req, res) => {
 };
 
 
-// ✅ LOGIN
 export const login = async (req, res, next) => {
     try {
         const { username, password } = req.body;
@@ -45,7 +44,7 @@ export const login = async (req, res, next) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,       // ⚠️ set false in local dev if no HTTPS
+            secure: false,
             sameSite: "strict"
         });
 
@@ -64,7 +63,6 @@ export const login = async (req, res, next) => {
 };
 
 
-// 🔁 CHANGE PASSWORD
 export const changePassword = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -85,7 +83,6 @@ export const changePassword = async (req, res, next) => {
 };
 
 
-// 🚪 LOGOUT
 export const logout = async (req, res, next) => {
     try {
         res.clearCookie("token");
@@ -98,6 +95,54 @@ export const logout = async (req, res, next) => {
         res.status(err.statusCode || 500).json({
             success: false,
             message: err.message || "Internal Server Error"
+        });
+    }
+};
+
+
+export const forgotPassword = async (req, res) => {
+    try {
+        const { username } = req.body;
+
+        if (!username) {
+            return res.status(400).json({ message: "Username required" });
+        }
+
+        const resetLink = await requestPasswordReset(username); // 👈 capture return value
+
+        return res.json({
+            success: true,
+            message: "Reset link generated",
+            resetLink, // 👈 send to frontend
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Internal server error",
+        });
+    }
+};
+
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        if (!token || !newPassword) {
+            return res.status(400).json({ message: "Token and password required" });
+        }
+
+        await resetPasswordService(token, newPassword);
+
+        return res.json({
+            success: true,
+            message: "Password reset successful"
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(400).json({
+            message: err.message || "Invalid or expired token"
         });
     }
 };

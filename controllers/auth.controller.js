@@ -11,9 +11,9 @@ import { requestPasswordReset, resetPasswordService } from "../services/password
 
 export const register = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { organizationId, username, email, password } = req.body;
 
-        const user = await registerUser(username, password);
+        const user = await registerUser(organizationId, username, email, password);
 
         res.status(201).json({
             success: true,
@@ -32,26 +32,25 @@ export const register = async (req, res) => {
 
 export const login = async (req, res, next) => {
     try {
-        const { username, password } = req.body;
+        const { organizationId, username, password } = req.body;
 
         const { user, forcePasswordChange } = await loginUser(
+            organizationId,
             username,
             password,
             req
         );
 
-        const token = generateToken(user);
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: false,
-            sameSite: "strict"
-        });
+        const access_token = generateToken(user);
 
         res.json({
             success: true,
             message: "Login successful",
-            forcePasswordChange
+            forcePasswordChange,
+            token: {
+                access_token
+            },
+            user
         });
     } catch (err) {
         console.error("Error:", err);

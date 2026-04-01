@@ -4,10 +4,11 @@ import { User } from "../models/User.js";
 import { AuthLog } from "../models/AuthLog.js";
 import { AppError } from "../utils/AppError.js";
 import bcrypt from "bcrypt";
+import e from "express";
 
-export const registerUser = async (username, password) => {
+export const registerUser = async (organizationId = "org02", username, email, password) => {
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { username: username } });
+    const existingUser = await User.findOne({ where: { organizationId, username } });
     if (existingUser) {
         throw new AppError(409, "User already exists",);
     }
@@ -16,24 +17,26 @@ export const registerUser = async (username, password) => {
 
     // Create user
     const newUser = await User.create({
+        organizationId,
+        email,
         username: username,
         password: hashed,
-        role: "Admin", // Default role for registration
+        role: "user", // Default role for registration
         passwordHistory: [hashed],
         passwordChangedAt: new Date()
     });
 
-    const userData = { id: newUser.id, role: newUser.role, username: newUser.username };
+    const userData = { id: newUser.id, organizationId: newUser.organizationId, email: newUser.email, role: newUser.role, username: newUser.username };
 
     return { user: userData };
 };
 
-export const loginUser = async (username, password, req) => {
-
-    const user = await User.findOne({ where: { username: username } });
+export const loginUser = async (organizationId = "org02", username, password, req) => {
+    const user = await User.findOne({ where: { organizationId, username } });
     if (!user) {
         throw new AppError(404, `User not found with username: ${username}`);
     }
+
     const log = async (status, description) => {
         await AuthLog.create({
             userId: user?.id,

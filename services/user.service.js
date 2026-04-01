@@ -15,7 +15,31 @@ export const getUserById = async (id) => {
 export const updateUser = async (id, data) => {
     const user = await User.findByPk(id);
     if (!user) return null;
-    await user.update(data);
+
+    const payload = data && typeof data === "object" && data.data ? data.data : data;
+
+    const allowedFields = [
+        "username",
+        "email",
+        "organizationId",
+        "password",
+        "passwordHistory",
+        "passwordChangedAt",
+        "isFirstLogin",
+        "failedAttempts",
+        "lockUntil",
+        "lastLoginAt",
+        "lastActivityAt",
+        "status",
+        "suspendedAt",
+        "role"
+    ];
+
+    const updateData = Object.fromEntries(
+        Object.entries(payload || {}).filter(([key]) => allowedFields.includes(key))
+    );
+
+    await user.update(updateData);
     return user;
 };
 

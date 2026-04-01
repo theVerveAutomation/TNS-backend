@@ -64,8 +64,8 @@ export const login = async (req, res, next) => {
 
 export const changePassword = async (req, res, next) => {
     try {
-        const userId = req.user.id;
-        const { newPassword } = req.body;
+        const { newPassword, userId } = req.body;
+        console.log("Changing password for user ID:", userId);
 
         await changePasswordService(userId, newPassword);
 

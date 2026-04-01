@@ -4,7 +4,6 @@ import { User } from "../models/User.js";
 import { AuthLog } from "../models/AuthLog.js";
 import { AppError } from "../utils/AppError.js";
 import bcrypt from "bcrypt";
-import e from "express";
 
 export const registerUser = async (organizationId = "org02", username, email, password) => {
     // Check if user already exists
@@ -98,9 +97,9 @@ export const loginUser = async (organizationId = "org02", username, password, re
 };
 
 export const changePassword = async (userId, newPassword) => {
-    const user = await User.findOne({ where: { username: username } });
+    const user = await User.findByPk(userId);
     if (!user) {
-        throw new AppError(404, `User not found with username: ${username}`);
+        throw new AppError(404, `User not found with id: ${userId}`);
     }
     validatePassword(newPassword, user.username);
     // ❌ REUSE CHECK

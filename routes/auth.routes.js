@@ -20,7 +20,7 @@ router.post("/register", register);
 router.post("/login", login);
 
 // 🔐 Change Password (protected)
-router.post("/change-password", protect, changePassword);
+router.post("/change-password", changePassword);
 
 // 🔐 Logout
 router.post("/logout", protect, logout);

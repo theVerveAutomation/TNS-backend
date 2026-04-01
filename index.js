@@ -28,7 +28,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -42,15 +41,15 @@ app.use("/api/auth/reset-password", resetPasswordRoute);
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/alerts", protect, sessionTimeout, alertRoutes);
-app.use("/api/auditlogs", protect, sessionTimeout, auditLogRoutes);
-app.use("/api/authlogs", protect, sessionTimeout, authLogRoutes);
-app.use("/api/cameras", protect, sessionTimeout, cameraRoutes);
-app.use("/api/cameraexceptions", protect, sessionTimeout, cameraExceptionRoutes);
-app.use("/api/camerafeatures", protect, sessionTimeout, cameraFeatureRoutes);
-app.use("/api/camerasnaps", protect, sessionTimeout, cameraSnapRoutes);
-app.use("/api/features", protect, sessionTimeout, featureRoutes);
-app.use("/api/users", protect, sessionTimeout, userRoutes);
+app.use("/api/alerts", alertRoutes);
+app.use("/api/auditlogs", auditLogRoutes);
+app.use("/api/authlogs", authLogRoutes);
+app.use("/api/cameras", cameraRoutes);
+app.use("/api/cameraexceptions", cameraExceptionRoutes);
+app.use("/api/camerafeatures", cameraFeatureRoutes);
+app.use("/api/camerasnaps", cameraSnapRoutes);
+app.use("/api/features", featureRoutes);
+app.use("/api/users", userRoutes);
 
 // 🔒 Example protected route
 app.get(

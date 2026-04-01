@@ -6,7 +6,7 @@ import { AppError } from "../utils/AppError.js";
 import bcrypt from "bcrypt";
 import e from "express";
 
-export const registerUser = async (organizationId, username, email, password) => {
+export const registerUser = async (organizationId = "org02", username, email, password) => {
     // Check if user already exists
     const existingUser = await User.findOne({ where: { organizationId, username } });
     if (existingUser) {
@@ -31,7 +31,7 @@ export const registerUser = async (organizationId, username, email, password) =>
     return { user: userData };
 };
 
-export const loginUser = async (organizationId, username, password, req) => {
+export const loginUser = async (organizationId = "org02", username, password, req) => {
     const user = await User.findOne({ where: { organizationId, username } });
     if (!user) {
         throw new AppError(404, `User not found with username: ${username}`);

@@ -34,6 +34,7 @@ export const updateUser = async (req, res) => {
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
         res.json({ success: true, user });
     } catch (err) {
+        console.error("Error:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 };
@@ -41,9 +42,9 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
     try {
         const result = await userService.deleteUser(req.params.id);
-        if (!result) return res.status(404).json({ success: false, message: "User not found" });
         res.json({ success: true, message: "User deleted" });
     } catch (err) {
+        console.error("Error:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 };

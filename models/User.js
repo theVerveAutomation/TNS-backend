@@ -54,7 +54,22 @@ export const User = sequelize.define("User", {
     role: {
         type: DataTypes.STRING,
         defaultValue: "user"
-    }
+    },
+
+    // ── Password Reset Fields ──────────────────────────────────────────────────
+    resetPasswordToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+
+    resetPasswordExpires: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+    },
+    // ──────────────────────────────────────────────────────────────────────────
+
 }, {
     timestamps: true,
 });

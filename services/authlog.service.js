@@ -8,6 +8,10 @@ export const getAllAuthLogs = async () => {
     return await AuthLog.findAll();
 };
 
+export const getAuthLogsByuserId = async (userId) => {
+    return await AuthLog.findAll({ where: { userId } });
+};
+
 export const getAuthLogById = async (id) => {
     return await AuthLog.findByPk(id);
 };

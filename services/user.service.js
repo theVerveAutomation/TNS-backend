@@ -1,4 +1,7 @@
 import { User } from "../models/User.js";
+import {
+    getAuthLogsByuserId
+} from "../services/authlog.service.js";
 
 export const createUser = async (data) => {
     return await User.create(data);
@@ -45,7 +48,11 @@ export const updateUser = async (id, data) => {
 
 export const deleteUser = async (id) => {
     const user = await User.findByPk(id);
-    if (!user) return false;
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const authlogs = await getAuthLogsByuserId(user.id);
+    for (const log of authlogs) {
+        await log.destroy();
+    }
     await user.destroy();
     return true;
 };

@@ -5,7 +5,7 @@ import { AuthLog } from "../models/AuthLog.js";
 import { AppError } from "../utils/AppError.js";
 import bcrypt from "bcrypt";
 
-export const registerUser = async (organizationId = "org02", username, email, password) => {
+export const registerUser = async (organizationId = "org02", username, email, password, role) => {
     // Check if user already exists
     const existingUser = await User.findOne({ where: { organizationId, username } });
     if (existingUser) {
@@ -20,7 +20,7 @@ export const registerUser = async (organizationId = "org02", username, email, pa
         email,
         username: username,
         password: hashed,
-        role: "user", // Default role for registration
+        role: role || "user",
         passwordHistory: [hashed],
         passwordChangedAt: new Date()
     });

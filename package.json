@@ -1,0 +1,42 @@
+{
+  "name": "tns-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theVerveAutomation/TNS-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/theVerveAutomation/TNS-backend/issues"
+  },
+  "homepage": "https://github.com/theVerveAutomation/TNS-backend#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "dayjs": "^1.11.20",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.4",
+    "nodemon": "^3.1.14",
+    "pg": "^8.20.0",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "dotenv": "^17.3.1"
+  }
+}

@@ -1,0 +1,91 @@
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+
+import authRoutes, { forgotPasswordRoute, resetPasswordRoute } from "./routes/auth.routes.js";
+import alertRoutes from "./routes/alert.routes.js";
+import auditLogRoutes from "./routes/auditlog.routes.js";
+import authLogRoutes from "./routes/authlog.routes.js";
+import cameraRoutes from "./routes/camera.routes.js";
+import cameraExceptionRoutes from "./routes/cameraexception.routes.js";
+import cameraFeatureRoutes from "./routes/camerafeature.routes.js";
+import cameraSnapRoutes from "./routes/camerasnap.routes.js";
+import featureRoutes from "./routes/feature.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import { loginLimiter } from "./middleware/rateLimiter.js";
+import { protect } from "./middleware/auth.middleware.js";
+import { sessionTimeout } from "./middleware/session.middleware.js";
+import "./jobs/cron.jobs.js";
+import sequelize from "./config/db.js";
+
+const app = express();
+dotenv.config();
+
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+}));
+app.use(express.json());
+app.use(cookieParser());
+
+// Apply rate limiter only on login
+//app.use("/api/auth/login", loginLimiter);
+
+// Public routes (no auth)
+app.use("/api/auth/forgot-password", forgotPasswordRoute);
+app.use("/api/auth/reset-password", resetPasswordRoute);
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/alerts", alertRoutes);
+app.use("/api/auditlogs", auditLogRoutes);
+app.use("/api/authlogs", authLogRoutes);
+app.use("/api/cameras", cameraRoutes);
+app.use("/api/cameraexceptions", cameraExceptionRoutes);
+app.use("/api/camerafeatures", cameraFeatureRoutes);
+app.use("/api/camerasnaps", cameraSnapRoutes);
+app.use("/api/features", featureRoutes);
+app.use("/api/users", userRoutes);
+
+// 🔒 Example protected route
+app.get(
+    "/api/dashboard",
+    protect,
+    sessionTimeout,
+    (req, res) => {
+        res.json({
+            message: "Secure dashboard access granted",
+            user: req.user
+        });
+    }
+);
+
+app.use("/", (req, res) => {
+    res.status(200).json({
+        message: "Welcome to the TNS Management System API",
+        status: "success"
+    });
+});
+
+// 404 fallback route for everything else
+app.use((req, res) => {
+    res.status(404).json({ message: "Route not found", status: "fail" });
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+sequelize
+    .sync({ alter: true })
+    .then(() => console.log("✅ Database & tables synced successfully!"))
+    .catch((err) => console.error("❌ Error syncing database:", err));
+
+// sequelize.authenticate().then(() => {
+//     console.log("✅ Database connection established successfully!");
+// }).catch((err) => {
+//     console.error("❌ Unable to connect to the database:", err);
+// });

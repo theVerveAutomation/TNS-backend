@@ -49,10 +49,6 @@ export const updateUser = async (id, data) => {
 export const deleteUser = async (id) => {
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
-    const authlogs = await getAuthLogsByuserId(user.id);
-    for (const log of authlogs) {
-        await log.destroy();
-    }
     await user.destroy();
     return true;
 };

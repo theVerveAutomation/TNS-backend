@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
-import authRoutes, { forgotPasswordRoute, resetPasswordRoute } from "./routes/auth.routes.js";
+import authRoutes from "./routes/auth.routes.js"; // ← fixed: removed named imports
 import alertRoutes from "./routes/alert.routes.js";
 import auditLogRoutes from "./routes/auditlog.routes.js";
 import authLogRoutes from "./routes/authlog.routes.js";
@@ -24,7 +24,6 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -32,12 +31,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Apply rate limiter only on login
-//app.use("/api/auth/login", loginLimiter);
-
-// Public routes (no auth)
-app.use("/api/auth/forgot-password", forgotPasswordRoute);
-app.use("/api/auth/reset-password", resetPasswordRoute);
+// ← removed: duplicate forgot-password and reset-password route registrations
+//    they are already handled inside authRoutes at /api/auth/forgot-password etc.
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -51,7 +46,7 @@ app.use("/api/camerasnaps", cameraSnapRoutes);
 app.use("/api/features", featureRoutes);
 app.use("/api/users", userRoutes);
 
-// 🔒 Example protected route
+// Protected route
 app.get(
     "/api/dashboard",
     protect,
@@ -71,21 +66,14 @@ app.use("/", (req, res) => {
     });
 });
 
-// 404 fallback route for everything else
+// 404 fallback
 app.use((req, res) => {
     res.status(404).json({ message: "Route not found", status: "fail" });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-
 sequelize
     .sync({ alter: true })
     .then(() => console.log("✅ Database & tables synced successfully!"))
     .catch((err) => console.error("❌ Error syncing database:", err));
-
-// sequelize.authenticate().then(() => {
-//     console.log("✅ Database connection established successfully!");
-// }).catch((err) => {
-//     console.error("❌ Unable to connect to the database:", err);
-// });

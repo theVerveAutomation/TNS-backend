@@ -9,10 +9,26 @@ export const Alert = sequelize.define("Alert", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
-    cameraId: DataTypes.UUID,
-    alertType: DataTypes.STRING,
-    message: DataTypes.TEXT,
-    snapshotUrl: DataTypes.STRING,
+    cameraId: {
+        type: DataTypes.UUID, // Changed from UUID to STRING to accept "cam1", "cam2", etc.
+        allowNull: false,
+    },
+    alertType: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    message: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    snapshotUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    videoUrl: { 
+        type: DataTypes.STRING, // Added for your video clips
+        allowNull: true,
+    },
     severity: {
         type: DataTypes.ENUM("Low", "Medium", "High", "Critical"),
         defaultValue: "Low",
@@ -25,17 +41,28 @@ export const Alert = sequelize.define("Alert", {
         type: DataTypes.ENUM("Unverified", "Valid", "False Alarm"),
         defaultValue: "Unverified",
     },
-    actionTaken: DataTypes.TEXT,
-    acknowledgedBy: DataTypes.UUID,
-    responseTimeMin: DataTypes.INTEGER,
+    actionTaken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    acknowledgedBy: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+    responseTimeMin: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
 }, {
     tableName: "alerts",
     underscored: true,
     timestamps: true,
-    updatedAt: false, // Only uses created_at based on schema
+    updatedAt: false, // Using created_at only
 });
 
-// Define Relationships
+// Relationships
+// Note: If Camera.id is a UUID, you might get a warning here. 
+// It's best if Camera.id and Alert.cameraId are the same type.
 Alert.belongsTo(Camera, { foreignKey: "cameraId" });
 Camera.hasMany(Alert, { foreignKey: "cameraId" });
 

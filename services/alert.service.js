@@ -1,4 +1,5 @@
 import { Alert } from "../models/Alert.js";
+import { Camera } from "../models/Camera.js";
 
 export const createAlert = async (data) => {
     return await Alert.create(data);
@@ -24,4 +25,17 @@ export const deleteAlert = async (id) => {
     if (!alert) return false;
     await alert.destroy();
     return true;
+};
+
+export const getRecentAlerts = async ({ limit = 10 }) => {
+  return await Alert.findAll({
+    limit: parseInt(limit),
+    order: [["created_at", "DESC"]],
+    include: [
+      {
+        model: Camera,
+        attributes: ["name"],
+      },
+    ],
+  });
 };

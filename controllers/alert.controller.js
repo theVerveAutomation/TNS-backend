@@ -1,11 +1,9 @@
 import * as alertService from "../services/alert.service.js";
 
 export const createAlert = async (req, res) => {
-    // 1. Log incoming data to verify what the Python script is sending
     console.log("📥 Incoming Alert from Worker:", req.body);
 
     try {
-        // 2. Validate that the required field exists in the request body
         if (!req.body.alertType) {
             console.error("❌ Validation Error: alertType is missing in payload");
             return res.status(400).json({ 
@@ -19,7 +17,6 @@ export const createAlert = async (req, res) => {
         console.log("✅ Alert successfully saved to DB:", alert.id);
         res.status(201).json({ success: true, alert });
     } catch (err) {
-        // 3. Detailed logging for the 500 error
         console.error("❌ Database/Service Error:", err.message);
         res.status(500).json({ 
             success: false, 
@@ -76,4 +73,17 @@ export const deleteAlert = async (req, res) => {
         console.error("❌ Error deleting alert:", err.message);
         res.status(500).json({ success: false, message: err.message });
     }
+};
+
+export const getRecentAlerts = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    const alerts = await alertService.getRecentAlerts({ limit });
+
+    res.json(alerts); 
+  } catch (err) {
+    console.error("❌ Error fetching recent alerts:", err.message);
+    res.status(500).json({ message: err.message });
+  }
 };

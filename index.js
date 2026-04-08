@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
-import authRoutes from "./routes/auth.routes.js"; // ← fixed: removed named imports
+import authRoutes from "./routes/auth.routes.js";
 import alertRoutes from "./routes/alert.routes.js";
 import auditLogRoutes from "./routes/auditlog.routes.js";
 import authLogRoutes from "./routes/authlog.routes.js";
@@ -13,11 +13,17 @@ import cameraFeatureRoutes from "./routes/camerafeature.routes.js";
 import cameraSnapRoutes from "./routes/camerasnap.routes.js";
 import featureRoutes from "./routes/feature.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import { loginLimiter } from "./middleware/rateLimiter.js";
 import { protect } from "./middleware/auth.middleware.js";
 import { sessionTimeout } from "./middleware/session.middleware.js";
 import "./jobs/cron.jobs.js";
 import sequelize from "./config/db.js";
+
+// ── Force model registration so all associations (belongsTo/hasMany) are active ──
+import "./models/Alert.js";
+import "./models/Camera.js";
+import "./models/User.js";
 
 const app = express();
 dotenv.config();
@@ -31,9 +37,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// ← removed: duplicate forgot-password and reset-password route registrations
-//    they are already handled inside authRoutes at /api/auth/forgot-password etc.
-
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/alerts", alertRoutes);
@@ -45,6 +48,7 @@ app.use("/api/camerafeatures", cameraFeatureRoutes);
 app.use("/api/camerasnaps", cameraSnapRoutes);
 app.use("/api/features", featureRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Protected route
 app.get(

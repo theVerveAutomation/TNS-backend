@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { Alert } from "../models/Alert.js";
 import { Camera } from "../models/Camera.js";
 
@@ -28,7 +29,14 @@ export const deleteAlert = async (id) => {
 };
 
 export const getRecentAlerts = async ({ limit = 10 }) => {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000); // last 24 hours
+
   return await Alert.findAll({
+    where: {
+      created_at: {
+        [Op.gte]: since,
+      },
+    },
     limit: parseInt(limit),
     order: [["created_at", "DESC"]],
     include: [

@@ -7,14 +7,20 @@ export const Camera = sequelize.define("Camera", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
-    organizationId: DataTypes.UUID,
+    organizationId: {
+        type: DataTypes.STRING,   // ← matches User.organizationId type
+        allowNull: false,
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    location: DataTypes.STRING,
+    url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     status: {
-        type: DataTypes.ENUM("normal", "offline", "maintenance"),
+        type: DataTypes.ENUM("normal", "warning", "offline"),
         defaultValue: "normal",
     },
     detection: {
@@ -33,12 +39,6 @@ export const Camera = sequelize.define("Camera", {
         type: DataTypes.STRING,
         defaultValue: "1080p",
     },
-    url: DataTypes.STRING,
-    isPhysicalDevice: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
-    streamUrl: DataTypes.STRING,
 }, {
     tableName: "cameras",
     underscored: true,

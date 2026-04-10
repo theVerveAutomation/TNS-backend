@@ -88,15 +88,21 @@ export const getDashboardSummaryService = async () => {
 };
 
 // =============================================================================
-// Detections by Type  (Pie chart)
+// Detections by Type  (Pie chart) — filtered to TODAY only
 // =============================================================================
 
 export const getDetectionsByTypeService = async () => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   const result = await Alert.findAll({
     attributes: [
       "alertType",
       [sequelize.fn("COUNT", sequelize.col("alert_type")), "count"],
     ],
+    where: {
+      created_at: { [Op.gte]: todayStart },
+    },
     group: ["alert_type"],
     raw: true,
   });
@@ -108,16 +114,22 @@ export const getDetectionsByTypeService = async () => {
 };
 
 // =============================================================================
-// Hourly Detection Trend  (Bar chart)
+// Hourly Detection Trend  (Bar chart) — filtered to TODAY only
 // =============================================================================
 
 export const getHourlyTrendService = async () => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   const result = await Alert.findAll({
     attributes: [
       [sequelize.fn("DATE_TRUNC", "hour", sequelize.col("created_at")), "hour"],
       "alertType",
       [sequelize.fn("COUNT", sequelize.col("id")), "count"],
     ],
+    where: {
+      created_at: { [Op.gte]: todayStart },
+    },
     group: ["hour", "alert_type"],
     order: [[sequelize.literal("hour"), "ASC"]],
     raw: true,
@@ -141,6 +153,10 @@ export const getHourlyTrendService = async () => {
 
   return Object.values(map);
 };
+
+// =============================================================================
+// Camera Status
+// =============================================================================
 
 export const getCameraStatusService = async () => {
   const cameras = await Camera.findAll({

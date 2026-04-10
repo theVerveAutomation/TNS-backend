@@ -14,6 +14,7 @@ import cameraSnapRoutes from "./routes/camerasnap.routes.js";
 import featureRoutes from "./routes/feature.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 import { loginLimiter } from "./middleware/rateLimiter.js";
 import { protect } from "./middleware/auth.middleware.js";
 import { sessionTimeout } from "./middleware/session.middleware.js";
@@ -49,6 +50,7 @@ app.use("/api/camerasnaps", cameraSnapRoutes);
 app.use("/api/features", featureRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Protected route
 app.get(

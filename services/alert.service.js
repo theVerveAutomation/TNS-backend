@@ -1,8 +1,15 @@
+import { Op } from "sequelize";
 import { Alert } from "../models/Alert.js";
 import { Camera } from "../models/Camera.js";
+import { sendAlertNotification } from "../services/notification.service.js";
 
 export const createAlert = async (data) => {
-    return await Alert.create(data);
+    const alert = await Alert.create(data);
+
+    // 🔔 Trigger OS notification
+    sendAlertNotification(alert);
+
+    return alert;
 };
 
 export const getAllAlerts = async () => {
@@ -28,7 +35,14 @@ export const deleteAlert = async (id) => {
 };
 
 export const getRecentAlerts = async ({ limit = 10 }) => {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000); // last 24 hours
+
   return await Alert.findAll({
+    where: {
+      created_at: {
+        [Op.gte]: since,
+      },
+    },
     limit: parseInt(limit),
     order: [["created_at", "DESC"]],
     include: [

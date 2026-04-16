@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, fn, col } from "sequelize";
 import sequelize from "../config/db.js";
 import { Alert } from "../models/Alert.js";
 import { Camera } from "../models/Camera.js";
@@ -88,10 +88,13 @@ export const getDashboardSummaryService = async () => {
 };
 
 // =============================================================================
-// Detections by Type  (Pie chart)
+// Detections by Type  (Pie chart) — filtered to TODAY only
 // =============================================================================
 
 export const getDetectionsByTypeService = async () => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   const result = await Alert.findAll({
     attributes: [
       "eventType",
@@ -100,7 +103,7 @@ export const getDetectionsByTypeService = async () => {
     where: {
       created_at: { [Op.gte]: todayStart },
     },
-    group: ["event_type"],
+    group: ["alert_type"],
     raw: true,
   });
 
@@ -111,10 +114,13 @@ export const getDetectionsByTypeService = async () => {
 };
 
 // =============================================================================
-// Hourly Detection Trend  (Bar chart)
+// Hourly Detection Trend  (Bar chart) — filtered to TODAY only
 // =============================================================================
 
 export const getHourlyTrendService = async () => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   const result = await Alert.findAll({
     attributes: [
       [sequelize.fn("DATE_TRUNC", "hour", sequelize.col("created_at")), "hour"],
@@ -124,7 +130,7 @@ export const getHourlyTrendService = async () => {
     where: {
       created_at: { [Op.gte]: todayStart },
     },
-    group: ["hour", "event_type"],
+    group: ["hour", "alert_type"],
     order: [[sequelize.literal("hour"), "ASC"]],
     raw: true,
   });
@@ -147,6 +153,10 @@ export const getHourlyTrendService = async () => {
 
   return Object.values(map);
 };
+
+// =============================================================================
+// Camera Status
+// =============================================================================
 
 export const getCameraStatusService = async () => {
   const cameras = await Camera.findAll({
@@ -174,4 +184,89 @@ export const getCameraStatusService = async () => {
     status: cam.status === "normal" ? "online" : "offline",
     detections: alertMap[cam.id] || 0,
   }));
+};
+
+// =============================================================================
+// Today's Summary  (Video Analytics — Summary card)
+// =============================================================================
+
+export const getTodaySummary = async () => {
+  // 🕒 Get today's range
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // ── Total events ───────────────────────────────────────────────────────────
+  const totalEvents = await Alert.count({
+    where: {
+      created_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    },
+  });
+
+  // ── Critical alerts ────────────────────────────────────────────────────────
+  const criticalAlerts = await Alert.count({
+    where: {
+      severity: "Critical",
+      created_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    },
+  });
+
+  // ── Avg response time (ignore nulls) ───────────────────────────────────────
+  const avgResponse = await Alert.findOne({
+    attributes: [
+      [fn("AVG", col("response_time_min")), "avgResponse"],
+    ],
+    where: {
+      response_time_min: {
+        [Op.ne]: null,
+      },
+      created_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    },
+    raw: true,
+  });
+
+  const avgResponseTime = avgResponse?.avgResponse
+    ? parseFloat(avgResponse.avgResponse)
+    : 0;
+
+  // ── Accuracy ───────────────────────────────────────────────────────────────
+  const validCount = await Alert.count({
+    where: {
+      validation_status: "Valid",
+      created_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    },
+  });
+
+  const falseCount = await Alert.count({
+    where: {
+      validation_status: "False Alarm",
+      created_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    },
+  });
+
+  const totalVerified = validCount + falseCount;
+
+  const accuracy =
+    totalVerified > 0
+      ? (validCount / totalVerified) * 100
+      : 0;
+
+  return {
+    total_events: totalEvents,
+    critical_alerts: criticalAlerts,
+    avg_response_time: Number(avgResponseTime.toFixed(2)),
+    accuracy: Number(accuracy.toFixed(2)),
+  };
 };

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import http from "http";
 
 import authRoutes from "./routes/auth.routes.js";
 import alertRoutes from "./routes/alert.routes.js";
@@ -13,11 +14,14 @@ import cameraFeatureRoutes from "./routes/camerafeature.routes.js";
 import featureRoutes from "./routes/feature.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
+import reportRoutes from "./routes/report.routes.js";
+import { initSocket } from "./socket.js";
 import { loginLimiter } from "./middleware/rateLimiter.js";
 import { protect } from "./middleware/auth.middleware.js";
 import { sessionTimeout } from "./middleware/session.middleware.js";
 import "./jobs/cron.jobs.js";
 import sequelize from "./config/db.js";
+import { getIO } from "./socket.js";
 
 // ── Force model registration so all associations (belongsTo/hasMany) are active ──
 import "./models/Alert.js";
@@ -47,6 +51,7 @@ app.use("/api/camerafeatures", cameraFeatureRoutes);
 app.use("/api/features", featureRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Protected route
 app.get(
@@ -73,7 +78,12 @@ app.use((req, res) => {
     res.status(404).json({ message: "Route not found", status: "fail" });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = http.createServer(app);
+
+// Initialize socket
+initSocket(server);
+
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 sequelize
     .sync({ alter: true })

@@ -24,14 +24,14 @@ export const getDashboardSummaryService = async () => {
   // ── Alerts TODAY ───────────────────────────────────────────────────────────
   const fallToday = await Alert.count({
     where: {
-      alertType: { [Op.iLike]: "fall" },
+      eventType: { [Op.iLike]: "fall" },
       created_at: { [Op.gte]: todayStart },
     },
   });
 
   const tussleToday = await Alert.count({
     where: {
-      alertType: { [Op.iLike]: "tussle" },
+      eventType: { [Op.iLike]: "tussle" },
       created_at: { [Op.gte]: todayStart },
     },
   });
@@ -39,7 +39,7 @@ export const getDashboardSummaryService = async () => {
   // ── Alerts YESTERDAY ───────────────────────────────────────────────────────
   const fallYesterday = await Alert.count({
     where: {
-      alertType: { [Op.iLike]: "fall" },
+      eventType: { [Op.iLike]: "fall" },
       created_at: {
         [Op.gte]: yesterdayStart,
         [Op.lt]: todayStart,
@@ -49,7 +49,7 @@ export const getDashboardSummaryService = async () => {
 
   const tussleYesterday = await Alert.count({
     where: {
-      alertType: { [Op.iLike]: "tussle" },
+      eventType: { [Op.iLike]: "tussle" },
       created_at: {
         [Op.gte]: yesterdayStart,
         [Op.lt]: todayStart,
@@ -94,15 +94,18 @@ export const getDashboardSummaryService = async () => {
 export const getDetectionsByTypeService = async () => {
   const result = await Alert.findAll({
     attributes: [
-      "alertType",
-      [sequelize.fn("COUNT", sequelize.col("alert_type")), "count"],
+      "eventType",
+      [sequelize.fn("COUNT", sequelize.col("event_type")), "count"],
     ],
-    group: ["alert_type"],
+    where: {
+      created_at: { [Op.gte]: todayStart },
+    },
+    group: ["event_type"],
     raw: true,
   });
 
   return result.map((item) => ({
-    type: item.alertType.toLowerCase(),
+    type: item.eventType.toLowerCase(),
     count: Number(item.count),
   }));
 };
@@ -115,10 +118,13 @@ export const getHourlyTrendService = async () => {
   const result = await Alert.findAll({
     attributes: [
       [sequelize.fn("DATE_TRUNC", "hour", sequelize.col("created_at")), "hour"],
-      "alertType",
+      "eventType",
       [sequelize.fn("COUNT", sequelize.col("id")), "count"],
     ],
-    group: ["hour", "alert_type"],
+    where: {
+      created_at: { [Op.gte]: todayStart },
+    },
+    group: ["hour", "event_type"],
     order: [[sequelize.literal("hour"), "ASC"]],
     raw: true,
   });
@@ -133,7 +139,7 @@ export const getHourlyTrendService = async () => {
     const label =
       new Date(row.hour).getHours().toString().padStart(2, "0") + ":00";
 
-    const type = row.alertType.toLowerCase();
+    const type = row.eventType.toLowerCase();
     if (type === "fall" || type === "tussle") {
       map[label][type] = Number(row.count);
     }

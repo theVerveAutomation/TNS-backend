@@ -4,24 +4,30 @@ export const createAlert = async (req, res) => {
     console.log("📥 Incoming Alert from Worker:", req.body);
 
     try {
-        if (!req.body.alertType) {
-            console.error("❌ Validation Error: alertType is missing in payload");
-            return res.status(400).json({ 
-                success: false, 
-                message: "alertType is required" 
+        if (!req.body.eventType && !req.body.alertType) {
+            console.error("❌ Validation Error: eventType/alertType is missing in payload");
+            return res.status(400).json({
+                success: false,
+                message: "eventType is required"
             });
         }
 
+        // Accept both `eventType` (new) and `alertType` (legacy)
+        if (req.body.alertType && !req.body.eventType) req.body.eventType = req.body.alertType;
+        // Map snapshotUrl/videoUrl to new snapshotPath/videoPath if provided
+        if (req.body.snapshotUrl && !req.body.snapshotPath) req.body.snapshotPath = req.body.snapshotUrl;
+        if (req.body.videoUrl && !req.body.videoPath) req.body.videoPath = req.body.videoUrl;
+
         const alert = await alertService.createAlert(req.body);
-        
+
         console.log("✅ Alert successfully saved to DB:", alert.id);
         res.status(201).json({ success: true, alert });
     } catch (err) {
         console.error("❌ Database/Service Error:", err.message);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : {} 
+            stack: process.env.NODE_ENV === 'development' ? err.stack : {}
         });
     }
 };
@@ -76,14 +82,14 @@ export const deleteAlert = async (req, res) => {
 };
 
 export const getRecentAlerts = async (req, res) => {
-  try {
-    const { limit = 10 } = req.query;
+    try {
+        const { limit = 10 } = req.query;
 
-    const alerts = await alertService.getRecentAlerts({ limit });
+        const alerts = await alertService.getRecentAlerts({ limit });
 
-    res.json(alerts); 
-  } catch (err) {
-    console.error("❌ Error fetching recent alerts:", err.message);
-    res.status(500).json({ message: err.message });
-  }
+        res.json(alerts);
+    } catch (err) {
+        console.error("❌ Error fetching recent alerts:", err.message);
+        res.status(500).json({ message: err.message });
+    }
 };

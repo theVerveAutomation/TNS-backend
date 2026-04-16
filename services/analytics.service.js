@@ -24,14 +24,14 @@ export const getDashboardSummaryService = async () => {
   // ── Alerts TODAY ───────────────────────────────────────────────────────────
   const fallToday = await Alert.count({
     where: {
-      eventType: { [Op.iLike]: "fall" },
+      alertType: { [Op.iLike]: "fall" },
       created_at: { [Op.gte]: todayStart },
     },
   });
 
   const tussleToday = await Alert.count({
     where: {
-      eventType: { [Op.iLike]: "tussle" },
+      alertType: { [Op.iLike]: "tussle" },
       created_at: { [Op.gte]: todayStart },
     },
   });
@@ -39,7 +39,7 @@ export const getDashboardSummaryService = async () => {
   // ── Alerts YESTERDAY ───────────────────────────────────────────────────────
   const fallYesterday = await Alert.count({
     where: {
-      eventType: { [Op.iLike]: "fall" },
+      alertType: { [Op.iLike]: "fall" },
       created_at: {
         [Op.gte]: yesterdayStart,
         [Op.lt]: todayStart,
@@ -49,7 +49,7 @@ export const getDashboardSummaryService = async () => {
 
   const tussleYesterday = await Alert.count({
     where: {
-      eventType: { [Op.iLike]: "tussle" },
+      alertType: { [Op.iLike]: "tussle" },
       created_at: {
         [Op.gte]: yesterdayStart,
         [Op.lt]: todayStart,
@@ -97,8 +97,8 @@ export const getDetectionsByTypeService = async () => {
 
   const result = await Alert.findAll({
     attributes: [
-      "eventType",
-      [sequelize.fn("COUNT", sequelize.col("event_type")), "count"],
+      "alertType",
+      [sequelize.fn("COUNT", sequelize.col("alert_type")), "count"],
     ],
     where: {
       created_at: { [Op.gte]: todayStart },
@@ -108,7 +108,7 @@ export const getDetectionsByTypeService = async () => {
   });
 
   return result.map((item) => ({
-    type: item.eventType.toLowerCase(),
+    type: item.alertType.toLowerCase(),
     count: Number(item.count),
   }));
 };
@@ -124,7 +124,7 @@ export const getHourlyTrendService = async () => {
   const result = await Alert.findAll({
     attributes: [
       [sequelize.fn("DATE_TRUNC", "hour", sequelize.col("created_at")), "hour"],
-      "eventType",
+      "alertType",
       [sequelize.fn("COUNT", sequelize.col("id")), "count"],
     ],
     where: {
@@ -145,7 +145,7 @@ export const getHourlyTrendService = async () => {
     const label =
       new Date(row.hour).getHours().toString().padStart(2, "0") + ":00";
 
-    const type = row.eventType.toLowerCase();
+    const type = row.alertType.toLowerCase();
     if (type === "fall" || type === "tussle") {
       map[label][type] = Number(row.count);
     }

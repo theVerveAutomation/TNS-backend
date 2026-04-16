@@ -10,23 +10,28 @@ export const Alert = sequelize.define("Alert", {
         primaryKey: true,
     },
     cameraId: {
-        type: DataTypes.UUID, // Changed from UUID to STRING to accept "cam1", "cam2", etc.
+        type: DataTypes.UUID,
         allowNull: false,
     },
     alertType: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50), // e.g., 'FALL', 'TUSSLE'
         allowNull: false,
     },
-    message: {
+    confidence: {
+        type: DataTypes.DECIMAL(4, 3),
+        allowNull: true,
+    },
+    // File pointers on disk
+    snapshotPath: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    videoPath: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    snapshotUrl: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    videoUrl: { 
-        type: DataTypes.STRING, // Added for your video clips
+    message: {
+        type: DataTypes.TEXT,
         allowNull: true,
     },
     severity: {
@@ -53,18 +58,34 @@ export const Alert = sequelize.define("Alert", {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    isReviewed: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
 }, {
     tableName: "alerts",
     underscored: true,
     timestamps: true,
     updatedAt: false, // Using created_at only
+    indexes: [
+        {
+            name: "idx_alerts_camera_date",
+            fields: ["camera_id", "created_at"],
+            order: [["created_at", "DESC"]],
+        },
+    ],
 });
 
 // Relationships
 // Note: If Camera.id is a UUID, you might get a warning here. 
 // It's best if Camera.id and Alert.cameraId are the same type.
-Alert.belongsTo(Camera, { foreignKey: "cameraId" });
-Camera.hasMany(Alert, { foreignKey: "cameraId" });
+// Keep lightweight relationships but avoid enforcing DB-level foreign keys
+try {
+    Alert.belongsTo(Camera, { foreignKey: "cameraId", constraints: false });
+    Camera.hasMany(Alert, { foreignKey: "cameraId", constraints: false });
 
-Alert.belongsTo(User, { foreignKey: "acknowledgedBy" });
-User.hasMany(Alert, { foreignKey: "acknowledgedBy" });
+    Alert.belongsTo(User, { foreignKey: "acknowledgedBy", constraints: false });
+    User.hasMany(Alert, { foreignKey: "acknowledgedBy", constraints: false });
+} catch (e) {
+    // ignore if models load order causes issues
+}

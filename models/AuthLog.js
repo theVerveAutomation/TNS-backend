@@ -26,5 +26,5 @@ export const AuthLog = sequelize.define("AuthLog", {
 });
 
 // Define relationship
-AuthLog.belongsTo(User, { foreignKey: "userId" });
-User.hasMany(AuthLog, { foreignKey: "userId" });
+// AuthLog.belongsTo(User, { foreignKey: "userId" });
+// User.hasMany(AuthLog, { foreignKey: "userId" });

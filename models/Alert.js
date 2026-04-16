@@ -13,7 +13,7 @@ export const Alert = sequelize.define("Alert", {
         type: DataTypes.UUID,
         allowNull: false,
     },
-    alert_type: {
+    alertType: {
         type: DataTypes.STRING(50), // e.g., 'FALL', 'TUSSLE'
         allowNull: false,
     },

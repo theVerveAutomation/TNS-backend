@@ -1,9 +1,15 @@
 import { Op } from "sequelize";
 import { Alert } from "../models/Alert.js";
 import { Camera } from "../models/Camera.js";
+import { sendAlertNotification } from "../services/notification.service.js";
 
 export const createAlert = async (data) => {
-    return await Alert.create(data);
+    const alert = await Alert.create(data);
+
+    // 🔔 Trigger OS notification
+    sendAlertNotification(alert);
+
+    return alert;
 };
 
 export const getAllAlerts = async () => {

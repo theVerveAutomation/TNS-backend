@@ -9,7 +9,10 @@ import {
   getHourlyActivity,
   getComparison,
   getCameraPerformance,
+  getVideoAnalyticsSummary,
+  getTodaySummaryController,
   } from "../controllers/analytics.controller.js";
+  import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -22,5 +25,7 @@ router.get("/detection-trends", getDetectionTrends);
 router.get("/hourly-activity", getHourlyActivity);
 router.get("/comparison", getComparison);
 router.get("/camera-performance", getCameraPerformance);
+router.get("/video-summary", getVideoAnalyticsSummary);
+router.get("/today-summary", protect, getTodaySummaryController);
 
 export default router;

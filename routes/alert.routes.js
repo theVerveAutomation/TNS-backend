@@ -6,9 +6,12 @@ const router = express.Router();
 
 router.post("/", alertController.createAlert);
 router.get("/", alertController.getAllAlerts);
-router.get("/recent", alertController.getRecentAlerts); // ✅ MUST be before /:id
+router.get("/recent", alertController.getRecentAlerts); 
+router.get("/event-logs", protect, alertController.getEventLogs);
 router.get("/:id", alertController.getAlertById);
 router.put("/:id", alertController.updateAlert);
 router.delete("/:id", alertController.deleteAlert);
+router.post("/:id/review", protect, alertController.reviewAlert);
+
 
 export default router;

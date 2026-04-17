@@ -60,16 +60,17 @@ export const getCameraById = async (req, res) => {
 };
 
 export const updateCamera = async (req, res) => {
+    console.log("Updating camera with data:", req.body); // Debug log
     try {
         const { id } = req.params;
         const { organization_id } = req.query;
-        const { name, url } = req.body; // ✅ STRICT: Only pull name and url
+        const payload = req.body;
 
         if (!organization_id) {
             return res.status(400).json({ success: false, error: "organization_id is required" });
         }
 
-        const camera = await cameraService.updateCamera(id, { name, url }, organization_id);
+        const camera = await cameraService.updateCamera(id, payload, organization_id);
 
         if (!camera) {
             return res.status(404).json({ success: false, error: "Camera not found or access denied" });
@@ -94,7 +95,7 @@ export const deleteCamera = async (req, res) => {
         if (!result) {
             return res.status(404).json({ success: false, message: "Camera not found or access denied" });
         }
-        
+
         res.json({ success: true, message: "Camera deleted successfully" });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

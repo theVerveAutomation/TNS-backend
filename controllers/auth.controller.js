@@ -14,6 +14,7 @@ import {
   rejectPasswordResetRequest,
 } from "../services/passwordReset.service.js";
 import { PasswordResetRequest } from "../models/PasswordResetRequest.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 // ── Register ─────────────────────────────────────────────────────────────────
 export const register = async (req, res) => {
@@ -33,6 +34,18 @@ export const login = async (req, res) => {
     const { organizationId, username, password } = req.body;
     const { user, forcePasswordChange } = await loginUser(organizationId, username, password, req);
     const access_token = generateToken(user);
+
+    await logAudit({
+      userId: user.id,
+      action: "LOGIN_SUCCESS",
+      module: "Auth",
+      entityType: "User",
+      objectAffected: user.id,
+      status: "Success",
+      remarks: `User ${user.username} logged in`,
+      req,
+    }).catch(() => {}); // 
+
     res.json({
       success: true,
       message: "Login successful",
@@ -42,6 +55,17 @@ export const login = async (req, res) => {
     });
   } catch (err) {
     console.error("Error:", err);
+
+    await logAudit({
+      action: "LOGIN_FAILED",
+      module: "Auth",
+      entityType: "User",
+      status: "Failed",
+      metadata: { email: req.body.email },
+      remarks: "Failed login attempt",
+      req,
+    }).catch(() => {});
+
     res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal Server Error" });
   }
 };
@@ -61,6 +85,17 @@ export const changePassword = async (req, res) => {
 // ── Logout ────────────────────────────────────────────────────────────────────
 export const logout = async (req, res) => {
   try {
+    await logAudit({
+      userId: req.user.id,
+      action: "LOGOUT",
+      module: "Auth",
+      entityType: "User",
+      objectAffected: req.user.id,
+      status: "Success",
+      remarks: "User logged out",
+      req,
+    }).catch(() => {}); 
+
     res.clearCookie("token");
     res.json({ message: "Logged out successfully" });
   } catch (err) {
@@ -70,7 +105,6 @@ export const logout = async (req, res) => {
 };
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
-// ✅ No longer returns a link — saves a pending request for admin approval
 export const forgotPassword = async (req, res) => {
   try {
     const { username } = req.body;
@@ -81,7 +115,6 @@ export const forgotPassword = async (req, res) => {
 
     await requestPasswordReset(username);
 
-    // Always return success — never reveal if user exists
     return res.json({
       success: true,
       message: "If an account was found, a reset request has been submitted for admin approval.",
@@ -114,16 +147,10 @@ export const getResetRequests = async (req, res) => {
   try {
     const organizationId = req.user?.organizationId;
 
-    console.log("🔥 Logged-in user:", req.user);
-    console.log("🏢 Organization ID:", organizationId);
-
     const requests = await PasswordResetRequest.findAll({
       where: { organizationId },
       order: [["requestedAt", "DESC"]],
     });
-
-    console.log("📦 Requests found:", requests.length);
-    console.log("📦 Requests data:", requests);
 
     return res.json({ success: true, requests });
   } catch (err) {
@@ -164,37 +191,23 @@ export const getResetLink = async (req, res) => {
       return res.status(400).json({ message: "Username required" });
     }
 
-    // Find user
     const user = await User.findOne({ where: { username } });
 
-    // Always respond safely (don't reveal too much)
     if (!user) {
-      return res.json({
-        message: "If approved, reset link will be available",
-      });
+      return res.json({ message: "If approved, reset link will be available" });
     }
 
-    // Check if admin approved (token exists)
     if (!user.resetPasswordToken) {
-      return res.json({
-        message: "Reset request not approved yet",
-      });
+      return res.json({ message: "Reset request not approved yet" });
     }
 
-    // Check expiry
     if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
-      return res.json({
-        message: "Reset link expired. Request again.",
-      });
+      return res.json({ message: "Reset link expired. Request again." });
     }
 
-    // Build link
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${user.resetPasswordToken}`;
 
-    return res.json({
-      success: true,
-      resetLink,
-    });
+    return res.json({ success: true, resetLink });
   } catch (err) {
     console.error("Error in getResetLink:", err);
     return res.status(500).json({ message: "Internal server error" });

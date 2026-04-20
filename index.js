@@ -26,7 +26,7 @@ import { getIO } from "./socket.js";
 // ── Force model registration so all associations (belongsTo/hasMany) are active ──
 import "./models/Alert.js";
 import "./models/Camera.js";
-import "./models/User.js";
+import "./models/index.js";
 
 const app = express();
 dotenv.config();

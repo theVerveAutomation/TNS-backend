@@ -8,34 +8,52 @@ export const AuditLog = sequelize.define("AuditLog", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
+
     timestamp: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
         allowNull: false,
     },
-    userId: DataTypes.UUID,
+
+    userId: {
+        type: DataTypes.UUID,
+        field: "user_id"
+    },
+
     module: {
         type: DataTypes.STRING,
         allowNull: false,
     },
+
     action: {
         type: DataTypes.STRING,
         allowNull: false,
     },
+
     objectAffected: DataTypes.STRING,
-    oldValue: DataTypes.TEXT,
-    newValue: DataTypes.TEXT,
+
+    oldValue: DataTypes.JSONB,   
+    newValue: DataTypes.JSONB,   
+
     status: {
         type: DataTypes.STRING,
         allowNull: false,
     },
+
     remarks: DataTypes.TEXT,
+
+
+    entityType: DataTypes.STRING,  
+
+    metadata: DataTypes.JSONB,    
+
+    ipAddress: DataTypes.STRING,
+
+    userAgent: DataTypes.STRING,
+
 }, {
     tableName: "audit_logs",
     underscored: true,
-    timestamps: false,
+    timestamps: false, 
 });
 
-// Define Relationships
-AuditLog.belongsTo(User, { foreignKey: "userId" });
-User.hasMany(AuditLog, { foreignKey: "userId" });

@@ -26,6 +26,25 @@ export const updateCamera = async (id, data, organizationId) => {
     return camera;
 };
 
+export const updateCameraSettings = async (id, settings, organizationId) => {
+    const camera = await Camera.findOne({ where: { id, organizationId } });
+    if (!camera) return null;
+
+    // Whitelist settings fields that can be changed via the settings endpoint
+    const allowed = ["detection", "alertSound", "resolution"];
+    const updateData = {};
+
+    if (settings.detection !== undefined) updateData.detection = Boolean(settings.detection);
+    if (settings.alertSound !== undefined) updateData.alertSound = Boolean(settings.alertSound);
+    if (settings.resolution !== undefined) updateData.resolution = String(settings.resolution);
+
+    // If no allowed fields provided, do nothing
+    if (Object.keys(updateData).length === 0) return camera;
+
+    await camera.update(updateData);
+    return camera;
+};
+
 export const deleteCamera = async (id, organizationId) => {
     const camera = await Camera.findOne({ where: { id, organizationId } });
     if (!camera) return false;

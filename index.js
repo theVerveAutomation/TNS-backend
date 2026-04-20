@@ -35,7 +35,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 }));
 app.use(express.json());
 app.use(cookieParser());

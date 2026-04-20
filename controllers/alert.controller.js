@@ -1,4 +1,6 @@
 import * as alertService from "../services/alert.service.js";
+import { Alert } from "../models/Alert.js";
+import { User } from "../models/User.js";
 
 export const createAlert = async (req, res) => {
     console.log("📥 Incoming Alert from Worker:", req.body);
@@ -92,4 +94,62 @@ export const getRecentAlerts = async (req, res) => {
         console.error("❌ Error fetching recent alerts:", err.message);
         res.status(500).json({ message: err.message });
     }
+};
+
+export const reviewAlert = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { accuracy, notes } = req.body;
+
+    const alert = await Alert.findByPk(id);
+    if (!alert) {
+      return res.status(404).json({ message: "Alert not found" });
+    }
+
+    const now = new Date();
+
+    // 🔹 calculate response time
+    const responseTime = Math.floor(
+      (now - new Date(alert.createdAt)) / 60000
+    );
+
+    // 🔹 update alert
+    await alert.update({
+      isReviewed: true,
+      validationStatus: accuracy === "valid" ? "Valid" : "False Alarm",
+      actionTaken: notes,
+      acknowledgedBy: req.user.id, // ✅ FIXED: UUID instead of username
+      responseTimeMin: responseTime,
+      status: "Closed",
+    });
+
+    res.json({ success: true, message: "Alert reviewed successfully" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error reviewing alert" });
+  }
+};
+
+export const getEventLogs = async (req, res) => {
+  try {
+    // ✅ FIXED: include both id and username from User
+    const logs = await Alert.findAll({
+      where: {
+        isReviewed: true
+      },
+      order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: User,
+          attributes: ["id", "username"]
+        }
+      ]
+    });
+
+    res.json({ logs });
+
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching event logs" });
+  }
 };

@@ -24,7 +24,7 @@ export const Alert = sequelize.define("Alert", {
     // File pointers on disk
     snapshotPath: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
     },
     videoPath: {
         type: DataTypes.TEXT,

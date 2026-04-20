@@ -1,8 +1,14 @@
 import * as cameraService from "../services/camera.service.js";
+import { buildRtspUrl } from "../utils/rtspBuilder.js";
 
 export const createCamera = async (req, res) => {
     try {
-        const { name, url, organization_id } = req.body;
+        let { name, url, username, password, ip_address, organization_id } = req.body;
+
+        // ✅ Fix 1: Trim inputs to prevent spacing issues
+        if (username !== undefined) username = username.trim();
+        if (password !== undefined) password = password.trim();
+        if (ip_address !== undefined) ip_address = ip_address.trim();
 
         if (!name || !organization_id) {
             return res.status(400).json({
@@ -11,11 +17,48 @@ export const createCamera = async (req, res) => {
             });
         }
 
-        // ✅ STRICT CREATE: Only allow name, url, and org. 
-        // Backend handles status, detection, etc.
+        let finalUrl = url;
+
+        // ✅ Production mode → build URL from credentials
+        if (process.env.NODE_ENV === "production") {
+            if (!username || password === undefined || !ip_address) {
+                return res.status(400).json({
+                    success: false,
+                    error: "username, password and ip_address are required in production"
+                });
+            }
+
+            // ✅ Fix 2: Validate IP format
+            if (!ip_address.match(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/)) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid IP address format"
+                });
+            }
+
+            const ipWithPort = ip_address.includes(":")
+                ? ip_address
+                : `${ip_address}:554`;
+
+            // ✅ Fix 3: Encode password for special characters
+            finalUrl = buildRtspUrl({
+                username,
+                password: encodeURIComponent(password ?? ""),
+                ip: ipWithPort
+            });
+        }
+
+        // ✅ Development mode → use raw URL
+        if (process.env.NODE_ENV !== "production" && !url) {
+            return res.status(400).json({
+                success: false,
+                error: "url is required in development"
+            });
+        }
+
         const camera = await cameraService.createCamera({
             name,
-            url,
+            url: finalUrl,
             organizationId: organization_id
         });
 
@@ -60,17 +103,64 @@ export const getCameraById = async (req, res) => {
 };
 
 export const updateCamera = async (req, res) => {
-    console.log("Updating camera with data:", req.body); // Debug log
     try {
         const { id } = req.params;
         const { organization_id } = req.query;
-        const payload = req.body;
+        let { name, url, username, password, ip_address } = req.body;
+
+        // ✅ Fix 1: Trim inputs to prevent spacing issues
+        if (username !== undefined) username = username.trim();
+        if (password !== undefined) password = password.trim();
+        if (ip_address !== undefined) ip_address = ip_address.trim();
 
         if (!organization_id) {
             return res.status(400).json({ success: false, error: "organization_id is required" });
         }
 
-        const camera = await cameraService.updateCamera(id, payload, organization_id);
+        let finalUrl = undefined;
+
+        // ✅ Production mode → build URL if credentials provided
+        if (process.env.NODE_ENV === "production") {
+            // ✅ Fix 4: Better update condition — check all three are present
+            if (
+                username !== undefined &&
+                password !== undefined &&
+                ip_address !== undefined
+            ) {
+                // ✅ Fix 2: Validate IP format
+                if (!ip_address.match(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/)) {
+                    return res.status(400).json({
+                        success: false,
+                        error: "Invalid IP address format"
+                    });
+                }
+
+                const ipWithPort = ip_address.includes(":")
+                    ? ip_address
+                    : `${ip_address}:554`;
+
+                // ✅ Fix 3: Encode password for special characters
+                finalUrl = buildRtspUrl({
+                    username,
+                    password: encodeURIComponent(password ?? ""),
+                    ip: ipWithPort
+                });
+            }
+        } else {
+            // ✅ Development mode → use raw URL only if explicitly provided
+            if (url) {
+                finalUrl = url;
+            }
+        }
+
+        const camera = await cameraService.updateCamera(
+            id,
+            {
+                name,
+                ...(finalUrl !== undefined && { url: finalUrl })
+            },
+            organization_id
+        );
 
         if (!camera) {
             return res.status(404).json({ success: false, error: "Camera not found or access denied" });

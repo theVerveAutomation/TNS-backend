@@ -50,10 +50,6 @@ export const sendAlertNotification = async (alert) => {
         metadata?.action;
 
       if (clicked) {
-        const schedule = await AlertSchedule.findOne({
-          where: { organizationId: camera.organizationId },
-        });
-
         if (!isWithinSchedule(schedule)) {
           console.log("⛔ Notification blocked by schedule");
           return;

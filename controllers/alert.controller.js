@@ -15,11 +15,27 @@ export const createAlert = async (req, res) => {
             });
         }
 
+        // Normalise field aliases sent by different workers
         if (req.body.alertType && !req.body.eventType) req.body.eventType = req.body.alertType;
+        if (req.body.eventType && !req.body.alertType) req.body.alertType = req.body.eventType;
+
+        // Python worker sends "imagePath" — map it to snapshotPath
+        if (req.body.imagePath && !req.body.snapshotPath) req.body.snapshotPath = req.body.imagePath;
+
         if (req.body.snapshotUrl && !req.body.snapshotPath) req.body.snapshotPath = req.body.snapshotUrl;
-        if (req.body.videoUrl && !req.body.videoPath) req.body.videoPath = req.body.videoUrl;
+        if (req.body.videoUrl   && !req.body.videoPath)    req.body.videoPath    = req.body.videoUrl;
+
+        console.log("📸 Resolved snapshotPath:", req.body.snapshotPath);
 
         const alert = await alertService.createAlert(req.body);
+
+        // 🚫 Blocked by schedule at service level
+        if (!alert) {
+            return res.status(200).json({
+                success: false,
+                message: "Blocked by schedule",
+            });
+        }
 
         await logAudit({
             action: "ALERT_CREATED",
@@ -43,7 +59,7 @@ export const createAlert = async (req, res) => {
         res.status(500).json({
             success: false,
             message: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : {}
+            stack: process.env.NODE_ENV === "development" ? err.stack : {}
         });
     }
 };
@@ -125,13 +141,13 @@ export const reviewAlert = async (req, res) => {
 
         const oldAlert = alert.toJSON();
 
-        alert.isReviewed = true;
-        alert.validationStatus = accuracy === "valid" ? "Valid" : "False Alarm";
-        alert.actionTaken = notes;
-        alert.acknowledgedBy = req.user.id;
-        alert.responseTimeMin = responseTime;
-        alert.status = "Closed";
-        alert.validation = accuracy;
+        alert.isReviewed        = true;
+        alert.validationStatus  = accuracy === "valid" ? "Valid" : "False Alarm";
+        alert.actionTaken       = notes;
+        alert.acknowledgedBy    = req.user.id;
+        alert.responseTimeMin   = responseTime;
+        alert.status            = "Closed";
+        alert.validation        = accuracy;
         await alert.save();
 
         await logAudit({
@@ -163,20 +179,17 @@ export const reviewAlert = async (req, res) => {
 export const getEventLogs = async (req, res) => {
     try {
         const logs = await Alert.findAll({
-            where: {
-                isReviewed: true
-            },
+            where: { isReviewed: true },
             order: [["createdAt", "DESC"]],
             include: [
                 {
                     model: User,
-                    attributes: ["id", "username"]
-                }
-            ]
+                    attributes: ["id", "username"],
+                },
+            ],
         });
 
         res.json({ logs });
-
     } catch (err) {
         res.status(500).json({ message: "Error fetching event logs" });
     }

@@ -62,6 +62,10 @@ export const Alert = sequelize.define("Alert", {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
+    createdAt: {
+        type: DataTypes.DATE,
+        field: "created_at",
+    },
 }, {
     tableName: "alerts",
     underscored: true,
@@ -72,6 +76,10 @@ export const Alert = sequelize.define("Alert", {
             name: "idx_alerts_camera_date",
             fields: ["camera_id", "created_at"],
             order: [["created_at", "DESC"]],
+        },
+        {
+            name: "idx_alerts_dashboard",
+            fields: ["created_at", "is_reviewed", "alert_type"],
         },
     ],
 });

@@ -1,11 +1,19 @@
 import notifier from "node-notifier";
+import path from "path";
 import { getIO } from "../socket.js";
 import { AlertSchedule } from "../models/AlertSchedule.js";
 import { isWithinSchedule } from "../utils/scheduleChecker.js";
 import { Camera } from "../models/Camera.js";
 
+const iconPath = path.resolve("assets/logo2.png");
+
 export const sendAlertNotification = async (alert) => {
   const camera = await Camera.findByPk(alert.cameraId);
+
+  if (!camera) {
+    console.log("❌ Camera not found for alert:", alert.cameraId);
+    return;
+  }
 
   const schedule = await AlertSchedule.findOne({
     where: { organizationId: camera.organizationId },
@@ -19,13 +27,13 @@ export const sendAlertNotification = async (alert) => {
   notifier.notify(
     {
       title: `🚨 ${alert.severity} Alert`,
-      message: `${alert.alertType} - Camera ${alert.cameraId}`,
-      sound: true,
+      message: `${alert.alertType} - Camera ${camera.name}`,
+      icon: iconPath,
+      appID: "Video Analytics Pro",
+      sound: camera.alertSound,
+      silent: !camera.alertSound,
       wait: true,
-
-      // ✅ Action button
       actions: ["Mark as Reviewed"],
-      closeLabel: "Dismiss",
     },
     async (err, response, metadata) => {
       if (err) {
@@ -35,27 +43,19 @@ export const sendAlertNotification = async (alert) => {
 
       console.log("🧪 Notification debug:", { response, metadata });
 
-      if (
+      const clicked =
         response === "activate" ||
-        response === "mark as reviewed" ||          
-        metadata?.action === "buttonClicked" ||     
-        metadata?.activationType === "Mark as Reviewed"
-      ) {
-        const camera = await Camera.findByPk(alert.cameraId);
+        response === "clicked" ||
+        metadata?.activationType ||
+        metadata?.action;
 
-        const schedule = await AlertSchedule.findOne({
-          where: { organizationId: camera.organizationId },
-        });
-
+      if (clicked) {
         if (!isWithinSchedule(schedule)) {
           console.log("⛔ Notification blocked by schedule");
           return;
         }
 
-        console.log("✅ Triggering modal for alert:", alert.id);
-
         const io = getIO();
-
         io.emit("open_review_modal", {
           alertId: alert.id,
           alertType: alert.alertType,

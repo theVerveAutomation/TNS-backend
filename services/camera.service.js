@@ -30,15 +30,19 @@ export const updateCameraSettings = async (id, settings, organizationId) => {
     const camera = await Camera.findOne({ where: { id, organizationId } });
     if (!camera) return null;
 
-    // Whitelist settings fields that can be changed via the settings endpoint
-    const allowed = ["detection", "alertSound", "resolution"];
     const updateData = {};
 
     if (settings.detection !== undefined) updateData.detection = Boolean(settings.detection);
-    if (settings.alertSound !== undefined) updateData.alertSound = Boolean(settings.alertSound);
+    
+    // ✅ Accept both snake_case (from frontend) and camelCase
+    const alertSound = settings.alertSound ?? settings.alert_sound;
+    if (alertSound !== undefined) updateData.alertSound = Boolean(alertSound);
+    
+    const frameRate = settings.frameRate ?? settings.frame_rate;
+    if (frameRate !== undefined) updateData.frameRate = Number(frameRate);
+    
     if (settings.resolution !== undefined) updateData.resolution = String(settings.resolution);
 
-    // If no allowed fields provided, do nothing
     if (Object.keys(updateData).length === 0) return camera;
 
     await camera.update(updateData);

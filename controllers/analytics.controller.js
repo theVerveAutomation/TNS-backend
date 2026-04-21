@@ -4,6 +4,7 @@ import {
     getHourlyTrendService,
     getCameraStatusService,
     getTodaySummary,
+    getAlertsBySeverityService,
 } from "../services/analytics.service.js";
 import sequelize from "../config/db.js";
 import { Camera } from "../models/Camera.js";
@@ -405,5 +406,15 @@ export const getTodaySummaryController = async (req, res) => {
   } catch (error) {
     console.error("Today summary error:", error);
     res.status(500).json({ message: "Failed to fetch today summary" });
+  }
+};
+
+export const getAlertsBySeverity = async (req, res) => {
+  try {
+    const data = await getAlertsBySeverityService();
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch severity data" });
   }
 };

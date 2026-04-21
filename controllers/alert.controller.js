@@ -1,6 +1,7 @@
 import * as alertService from "../services/alert.service.js";
 import { Alert } from "../models/Alert.js";
 import { User } from "../models/User.js";
+import { Camera } from "../models/Camera.js"; 
 import { logAudit } from "../utils/auditLogger.js";
 
 export const createAlert = async (req, res) => {
@@ -66,7 +67,15 @@ export const createAlert = async (req, res) => {
 
 export const getAllAlerts = async (req, res) => {
     try {
-        const alerts = await alertService.getAllAlerts();
+        const alerts = await Alert.findAll({
+            include: [
+                {
+                    model: Camera,
+                    attributes: ["id", "name"],
+                },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
         res.json({ success: true, alerts });
     } catch (err) {
         console.error("❌ Error fetching alerts:", err.message);

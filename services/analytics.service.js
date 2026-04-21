@@ -270,3 +270,41 @@ export const getTodaySummary = async () => {
     accuracy: Number(accuracy.toFixed(2)),
   };
 };
+
+// =============================================================================
+// Severity Pie chart =============================================================================
+export const getAlertsBySeverityService = async () => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const result = await Alert.findAll({
+    attributes: [
+      "severity",
+      [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+    ],
+    where: {
+      created_at: { [Op.gte]: todayStart },
+    },
+    group: ["severity"],
+    raw: true,
+  });
+
+  // 👉 Convert to map
+  const map = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
+
+  result.forEach((item) => {
+    const key = (item.severity || "medium").toLowerCase();
+    map[key] = Number(item.count);
+  });
+
+  // 👉 Always return all 4
+  return Object.keys(map).map((key) => ({
+    severity: key,
+    count: map[key],
+  }));
+};

@@ -4,6 +4,9 @@ import { Camera } from "../models/Camera.js";
 export const getDashboardAlertsSummary = async (req, res) => {
   try {
     const alerts = await Alert.findAll({
+      where: {
+        isReviewed: false,
+      },
       include: [{ model: Camera, attributes: ["id", "name"] }],
       order: [["createdAt", "DESC"]],
     });
@@ -19,7 +22,7 @@ export const getDashboardAlertsSummary = async (req, res) => {
       const created = new Date(alert.createdAt);
       return (
         !alert.isReviewed &&
-        now.getTime() - created.getTime() > 60 * 60 * 1000 // 1 hour
+        now.getTime() - created.getTime() > 60 * 60 * 1000
       );
     };
 
@@ -57,8 +60,10 @@ export const getDashboardAlertsSummary = async (req, res) => {
         today: tussle.today.slice(0, 5),
       },
       camera: {
-        todayCount: cameraAlerts.length,
-        today: cameraAlerts.slice(0, 5),
+        overdueCount: cameraAlerts.filter(isOverdue).length,
+        todayCount: cameraAlerts.filter((a) => isToday(a.createdAt) && !isOverdue(a)).length,
+        overdue: cameraAlerts.filter(isOverdue).slice(0, 5),
+        today: cameraAlerts.filter((a) => isToday(a.createdAt) && !isOverdue(a)).slice(0, 5),
       },
     });
   } catch (err) {

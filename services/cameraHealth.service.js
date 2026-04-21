@@ -1,55 +1,32 @@
 import { Camera } from "../models/Camera.js";
-import net from "net";
 
-const TIMEOUT = 3000;
+const MEDIAMTX_BASE_URL = process.env.MEDIAMTX_URL || "http://localhost:8889";
 
-const checkCamera = (ip, port = 554) => {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-
-    socket.setTimeout(TIMEOUT);
-
-    socket.on("connect", () => {
-      socket.destroy();
-      resolve(true);
-    });
-
-    socket.on("timeout", () => {
-      socket.destroy();
-      resolve(false);
-    });
-
-    socket.on("error", () => {
-      resolve(false);
-    });
-
-    socket.connect(port, ip);
-  });
+// ✅ Check camera via MediaMTX stream endpoint
+const checkCamera = async (cameraId) => {
+  try {
+    const res = await fetch(`${MEDIAMTX_BASE_URL}/live/cam_${cameraId}/`);
+    return res.ok;
+  } catch {
+    return false;
+  }
 };
 
+// ✅ Run all camera checks in parallel (fast + non-blocking)
 export const runCameraHealthCheck = async () => {
   const cameras = await Camera.findAll();
 
-  for (const cam of cameras) {
-    try {
-      if (!cam.url) {
+  await Promise.all(
+    cameras.map(async (cam) => {
+      try {
+        const isAlive = await checkCamera(cam.id);
+
+        await cam.update({
+          status: isAlive ? "normal" : "offline",
+        });
+      } catch {
         await cam.update({ status: "offline" });
-        continue;
       }
-
-      const parsed = new URL(cam.url);
-      const ip = parsed.hostname;
-      const port = parsed.port || 554;
-
-      const isAlive = await checkCamera(ip, port);
-
-      await cam.update({
-        status: isAlive ? "normal" : "offline",
-      });
-
-    } catch (err) {
-      await cam.update({ status: "offline" });
-    }
-  }
-
+    })
+  );
 };

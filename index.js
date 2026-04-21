@@ -16,6 +16,7 @@ import userRoutes from "./routes/user.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import alertScheduleRoutes from "./routes/alertSchedule.routes.js";
+import { getDashboardAlertsSummary } from "./controllers/dashboard.controller.js";
 import { initSocket } from "./socket.js";
 import { loginLimiter } from "./middleware/rateLimiter.js";
 import { protect } from "./middleware/auth.middleware.js";
@@ -54,6 +55,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/alert-schedule", alertScheduleRoutes);
+app.get("/api/dashboard/alerts-summary", getDashboardAlertsSummary);
 
 // Protected route
 app.get(

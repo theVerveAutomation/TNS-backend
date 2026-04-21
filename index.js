@@ -15,6 +15,7 @@ import featureRoutes from "./routes/feature.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import reportRoutes from "./routes/report.routes.js";
+import alertScheduleRoutes from "./routes/alertSchedule.routes.js";
 import { initSocket } from "./socket.js";
 import { loginLimiter } from "./middleware/rateLimiter.js";
 import { protect } from "./middleware/auth.middleware.js";
@@ -23,10 +24,10 @@ import "./jobs/cron.jobs.js";
 import sequelize from "./config/db.js";
 import { getIO } from "./socket.js";
 
-// ── Force model registration so all associations (belongsTo/hasMany) are active ──
+
 import "./models/Alert.js";
 import "./models/Camera.js";
-import "./models/User.js";
+import "./models/index.js";
 
 const app = express();
 dotenv.config();
@@ -52,6 +53,7 @@ app.use("/api/features", featureRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/alert-schedule", alertScheduleRoutes);
 
 // Protected route
 app.get(

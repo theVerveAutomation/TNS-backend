@@ -1,6 +1,7 @@
 import * as alertService from "../services/alert.service.js";
 import { Alert } from "../models/Alert.js";
 import { User } from "../models/User.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 export const createAlert = async (req, res) => {
     console.log("📥 Incoming Alert from Worker:", req.body);
@@ -14,13 +15,42 @@ export const createAlert = async (req, res) => {
             });
         }
 
-        // Accept both `eventType` (new) and `alertType` (legacy)
+        // Normalise field aliases sent by different workers
         if (req.body.alertType && !req.body.eventType) req.body.eventType = req.body.alertType;
-        // Map snapshotUrl/videoUrl to new snapshotPath/videoPath if provided
+        if (req.body.eventType && !req.body.alertType) req.body.alertType = req.body.eventType;
+
+        // Python worker sends "imagePath" — map it to snapshotPath
+        if (req.body.imagePath && !req.body.snapshotPath) req.body.snapshotPath = req.body.imagePath;
+
         if (req.body.snapshotUrl && !req.body.snapshotPath) req.body.snapshotPath = req.body.snapshotUrl;
-        if (req.body.videoUrl && !req.body.videoPath) req.body.videoPath = req.body.videoUrl;
+        if (req.body.videoUrl   && !req.body.videoPath)    req.body.videoPath    = req.body.videoUrl;
+
+        console.log("📸 Resolved snapshotPath:", req.body.snapshotPath);
 
         const alert = await alertService.createAlert(req.body);
+
+        // 🚫 Blocked by schedule at service level
+        if (!alert) {
+            return res.status(200).json({
+                success: false,
+                message: "Blocked by schedule",
+            });
+        }
+
+        await logAudit({
+            action: "ALERT_CREATED",
+            module: "Alert Mgmt",
+            entityType: "Alert",
+            objectAffected: alert.id,
+            metadata: { type: alert.alertType },
+            newValue: {
+                type: alert.alertType,
+                severity: alert.severity,
+                status: alert.status,
+            },
+            status: "Success",
+            remarks: `Alert created (${alert.alertType})`,
+        }).catch(() => { });
 
         console.log("✅ Alert successfully saved to DB:", alert.id);
         res.status(201).json({ success: true, alert });
@@ -29,7 +59,7 @@ export const createAlert = async (req, res) => {
         res.status(500).json({
             success: false,
             message: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : {}
+            stack: process.env.NODE_ENV === "development" ? err.stack : {}
         });
     }
 };
@@ -86,9 +116,7 @@ export const deleteAlert = async (req, res) => {
 export const getRecentAlerts = async (req, res) => {
     try {
         const { limit = 10 } = req.query;
-
         const alerts = await alertService.getRecentAlerts({ limit });
-
         res.json(alerts);
     } catch (err) {
         console.error("❌ Error fetching recent alerts:", err.message);
@@ -97,59 +125,72 @@ export const getRecentAlerts = async (req, res) => {
 };
 
 export const reviewAlert = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { accuracy, notes } = req.body;
+    try {
+        const { id } = req.params;
+        const { accuracy, notes } = req.body;
 
-    const alert = await Alert.findByPk(id);
-    if (!alert) {
-      return res.status(404).json({ message: "Alert not found" });
+        const alert = await Alert.findByPk(id);
+        if (!alert) {
+            return res.status(404).json({ message: "Alert not found" });
+        }
+
+        const now = new Date();
+        const responseTime = Math.floor(
+            (now - new Date(alert.createdAt)) / 60000
+        );
+
+        const oldAlert = alert.toJSON();
+
+        alert.isReviewed        = true;
+        alert.validationStatus  = accuracy === "valid" ? "Valid" : "False Alarm";
+        alert.actionTaken       = notes;
+        alert.acknowledgedBy    = req.user.id;
+        alert.responseTimeMin   = responseTime;
+        alert.status            = "Closed";
+        alert.validation        = accuracy;
+        await alert.save();
+
+        await logAudit({
+            userId: req.user.id,
+            action: "ALERT_REVIEWED",
+            module: "Alert Mgmt",
+            entityType: "Alert",
+            objectAffected: alert.id,
+            oldValue: {
+                status: oldAlert.status,
+                validation: oldAlert.validation ?? null,
+            },
+            newValue: {
+                status: alert.status,
+                validation: alert.validation,
+            },
+            status: "Success",
+            req,
+        }).catch(() => { });
+
+        res.json({ success: true, message: "Alert reviewed successfully" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error reviewing alert" });
     }
-
-    const now = new Date();
-
-    // 🔹 calculate response time
-    const responseTime = Math.floor(
-      (now - new Date(alert.createdAt)) / 60000
-    );
-
-    // 🔹 update alert
-    await alert.update({
-      isReviewed: true,
-      validationStatus: accuracy === "valid" ? "Valid" : "False Alarm",
-      actionTaken: notes,
-      acknowledgedBy: req.user.id, // ✅ FIXED: UUID instead of username
-      responseTimeMin: responseTime,
-      status: "Closed",
-    });
-
-    res.json({ success: true, message: "Alert reviewed successfully" });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error reviewing alert" });
-  }
 };
 
 export const getEventLogs = async (req, res) => {
-  try {
-    // ✅ FIXED: include both id and username from User
-    const logs = await Alert.findAll({
-      where: {
-        isReviewed: true
-      },
-      order: [["createdAt", "DESC"]],
-      include: [
-        {
-          model: User,
-          attributes: ["id", "username"]
-        }
-      ]
-    });
+    try {
+        const logs = await Alert.findAll({
+            where: { isReviewed: true },
+            order: [["createdAt", "DESC"]],
+            include: [
+                {
+                    model: User,
+                    attributes: ["id", "username"],
+                },
+            ],
+        });
 
-    res.json({ logs });
-
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching event logs" });
-  }
+        res.json({ logs });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching event logs" });
+    }
 };

@@ -1,11 +1,11 @@
 import * as cameraService from "../services/camera.service.js";
 import { buildRtspUrl } from "../utils/rtspBuilder.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 export const createCamera = async (req, res) => {
     try {
         let { name, url, username, password, ip_address, organization_id } = req.body;
 
-        // ✅ Fix 1: Trim inputs to prevent spacing issues
         if (username !== undefined) username = username.trim();
         if (password !== undefined) password = password.trim();
         if (ip_address !== undefined) ip_address = ip_address.trim();
@@ -19,7 +19,6 @@ export const createCamera = async (req, res) => {
 
         let finalUrl = url;
 
-        // ✅ Production mode → build URL from credentials
         if (process.env.NODE_ENV === "production") {
             if (!username || password === undefined || !ip_address) {
                 return res.status(400).json({
@@ -28,7 +27,6 @@ export const createCamera = async (req, res) => {
                 });
             }
 
-            // ✅ Fix 2: Validate IP format
             if (!ip_address.match(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/)) {
                 return res.status(400).json({
                     success: false,
@@ -40,7 +38,6 @@ export const createCamera = async (req, res) => {
                 ? ip_address
                 : `${ip_address}:554`;
 
-            // ✅ Fix 3: Encode password for special characters
             finalUrl = buildRtspUrl({
                 username,
                 password: encodeURIComponent(password ?? ""),
@@ -48,7 +45,6 @@ export const createCamera = async (req, res) => {
             });
         }
 
-        // ✅ Development mode → use raw URL
         if (process.env.NODE_ENV !== "production" && !url) {
             return res.status(400).json({
                 success: false,
@@ -61,6 +57,18 @@ export const createCamera = async (req, res) => {
             url: finalUrl,
             organizationId: organization_id
         });
+
+        await logAudit({
+            userId: req.user.id,
+            action: "CAMERA_CREATED",
+            module: "Camera Mgmt",
+            entityType: "Camera",
+            objectAffected: camera.id,
+            newValue: camera.toJSON(),
+            status: "Success",
+            remarks: `Camera ${camera.name} created`,
+            req,
+        }).catch(() => {});
 
         res.status(201).json({ success: true, camera });
     } catch (err) {
@@ -108,7 +116,6 @@ export const updateCamera = async (req, res) => {
         const { organization_id } = req.query;
         let { name, url, username, password, ip_address } = req.body;
 
-        // ✅ Fix 1: Trim inputs to prevent spacing issues
         if (username !== undefined) username = username.trim();
         if (password !== undefined) password = password.trim();
         if (ip_address !== undefined) ip_address = ip_address.trim();
@@ -117,17 +124,20 @@ export const updateCamera = async (req, res) => {
             return res.status(400).json({ success: false, error: "organization_id is required" });
         }
 
+        const existingCamera = await cameraService.getCameraById(id, organization_id);
+        if (!existingCamera) {
+            return res.status(404).json({ success: false, error: "Camera not found or access denied" });
+        }
+        const oldCameraData = existingCamera.toJSON();
+
         let finalUrl = undefined;
 
-        // ✅ Production mode → build URL if credentials provided
         if (process.env.NODE_ENV === "production") {
-            // ✅ Fix 4: Better update condition — check all three are present
             if (
                 username !== undefined &&
                 password !== undefined &&
                 ip_address !== undefined
             ) {
-                // ✅ Fix 2: Validate IP format
                 if (!ip_address.match(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/)) {
                     return res.status(400).json({
                         success: false,
@@ -139,7 +149,6 @@ export const updateCamera = async (req, res) => {
                     ? ip_address
                     : `${ip_address}:554`;
 
-                // ✅ Fix 3: Encode password for special characters
                 finalUrl = buildRtspUrl({
                     username,
                     password: encodeURIComponent(password ?? ""),
@@ -147,7 +156,6 @@ export const updateCamera = async (req, res) => {
                 });
             }
         } else {
-            // ✅ Development mode → use raw URL only if explicitly provided
             if (url) {
                 finalUrl = url;
             }
@@ -165,6 +173,19 @@ export const updateCamera = async (req, res) => {
         if (!camera) {
             return res.status(404).json({ success: false, error: "Camera not found or access denied" });
         }
+
+        await logAudit({
+            userId: req.user.id,
+            action: "CAMERA_UPDATED",
+            module: "Camera Mgmt",
+            entityType: "Camera",
+            objectAffected: camera.id,
+            oldValue: oldCameraData,
+            newValue: camera.toJSON(),
+            status: "Success",
+            remarks: `Camera ${camera.name} updated`,
+            req,
+        }).catch(() => {});
 
         res.json({ success: true, camera });
     } catch (err) {
@@ -203,10 +224,23 @@ export const deleteCamera = async (req, res) => {
             return res.status(400).json({ success: false, error: "organization_id is required" });
         }
 
-        const result = await cameraService.deleteCamera(id, organization_id);
-        if (!result) {
+        const camera = await cameraService.getCameraById(id, organization_id);
+        if (!camera) {
             return res.status(404).json({ success: false, message: "Camera not found or access denied" });
         }
+
+        await cameraService.deleteCamera(id, organization_id);
+
+        await logAudit({
+            userId: req.user.id,
+            action: "CAMERA_DELETED",
+            module: "Camera Mgmt",
+            entityType: "Camera",
+            objectAffected: camera.id,
+            status: "Success",
+            remarks: `Camera ${camera.name} deleted`,
+            req,
+        }).catch(() => {});
 
         res.json({ success: true, message: "Camera deleted successfully" });
     } catch (err) {

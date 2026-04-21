@@ -71,5 +71,6 @@ export const User = sequelize.define("User", {
     // ──────────────────────────────────────────────────────────────────────────
 
 }, {
+    tableName: "Users", // 🔥 THIS IS THE FIX
     timestamps: true,
 });

@@ -17,6 +17,7 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import alertScheduleRoutes from "./routes/alertSchedule.routes.js";
 import { getDashboardAlertsSummary } from "./controllers/dashboard.controller.js";
+import { runCameraHealthCheck } from "./services/cameraHealth.service.js";
 import { initSocket } from "./socket.js";
 import { loginLimiter } from "./middleware/rateLimiter.js";
 import { protect } from "./middleware/auth.middleware.js";
@@ -24,7 +25,6 @@ import { sessionTimeout } from "./middleware/session.middleware.js";
 import "./jobs/cron.jobs.js";
 import sequelize from "./config/db.js";
 import { getIO } from "./socket.js";
-
 
 import "./models/Alert.js";
 import "./models/Camera.js";
@@ -86,6 +86,11 @@ const server = http.createServer(app);
 
 // Initialize socket
 initSocket(server);
+
+// ✅ Camera health check — runs every 10 seconds
+setInterval(() => {
+    runCameraHealthCheck();
+}, 10000);
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 

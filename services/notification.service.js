@@ -1,8 +1,11 @@
 import notifier from "node-notifier";
+import path from "path";
 import { getIO } from "../socket.js";
 import { AlertSchedule } from "../models/AlertSchedule.js";
 import { isWithinSchedule } from "../utils/scheduleChecker.js";
 import { Camera } from "../models/Camera.js";
+
+const iconPath = path.resolve("assets/logo2.png");
 
 export const sendAlertNotification = async (alert) => {
   const camera = await Camera.findByPk(alert.cameraId);
@@ -25,11 +28,12 @@ export const sendAlertNotification = async (alert) => {
     {
       title: `🚨 ${alert.severity} Alert`,
       message: `${alert.alertType} - Camera ${camera.name}`,
+      icon: iconPath,
+      appID: "Video Analytics Pro",
       sound: camera.alertSound,
       silent: !camera.alertSound,
       wait: true,
       actions: ["Mark as Reviewed"],
-      closeLabel: "Dismiss",
     },
     async (err, response, metadata) => {
       if (err) {

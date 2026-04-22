@@ -1,12 +1,12 @@
 // src/controllers/auth.controller.js
+import jwt from "jsonwebtoken";                          
 import {
   registerUser,
   loginUser,
   changePassword as changePasswordService,
 } from "../services/auth.service.js";
 import { User } from "../models/User.js";
-
-import { generateToken } from "../utils/token.js";
+import { generateToken, generateRefreshToken } from "../utils/token.js";
 import {
   requestPasswordReset,
   resetPasswordService,
@@ -14,8 +14,9 @@ import {
   rejectPasswordResetRequest,
 } from "../services/passwordReset.service.js";
 import { PasswordResetRequest } from "../models/PasswordResetRequest.js";
+import { logAudit } from "../utils/auditLogger.js";
 
-// ── Register ─────────────────────────────────────────────────────────────────
+// ── Register ──────────────────────────────────────────────────────────────────
 export const register = async (req, res) => {
   try {
     const { organizationId, username, email, password, role } = req.body;
@@ -32,17 +33,69 @@ export const login = async (req, res) => {
   try {
     const { organizationId, username, password } = req.body;
     const { user, forcePasswordChange } = await loginUser(organizationId, username, password, req);
-    const access_token = generateToken(user);
+
+    const access_token  = generateToken(user);
+    const refresh_token = generateRefreshToken(user);
+
+    await logAudit({
+      userId: user.id,
+      action: "LOGIN_SUCCESS",
+      module: "Auth",
+      entityType: "User",
+      objectAffected: user.id,
+      status: "Success",
+      remarks: `User ${user.username} logged in`,
+      req,
+    }).catch(() => {});
+
     res.json({
       success: true,
       message: "Login successful",
       forcePasswordChange,
       token: { access_token },
+      refresh_token,
       user,
     });
   } catch (err) {
     console.error("Error:", err);
+
+    await logAudit({
+      action: "LOGIN_FAILED",
+      module: "Auth",
+      entityType: "User",
+      status: "Failed",
+      metadata: { email: req.body.email },
+      remarks: "Failed login attempt",
+      req,
+    }).catch(() => {});
+
     res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal Server Error" });
+  }
+};
+
+// ── Refresh Token ─────────────────────────────────────────────────────────────
+export const refreshToken = async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+
+    if (!refresh_token) {
+      return res.status(401).json({ success: false, message: "No refresh token provided" });
+    }
+
+    const decoded = jwt.verify(refresh_token, process.env.JWT_REFRESH_TOKEN_SECRET);
+
+    const user = await User.findOne({ where: { id: decoded.id } }); 
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    const access_token = generateToken(user);
+
+    return res.json({ success: true, token: { access_token } });
+
+  } catch (err) {
+    console.error("Error refreshing token:", err);
+    return res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
   }
 };
 
@@ -51,7 +104,7 @@ export const changePassword = async (req, res) => {
   try {
     const { newPassword, userId } = req.body;
     await changePasswordService(userId, newPassword);
-    res.json({ message: "Password updated successfully" });
+    res.json({ success: true, message: "Password updated successfully" });
   } catch (err) {
     console.error("Error:", err);
     res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal Server Error" });
@@ -61,8 +114,19 @@ export const changePassword = async (req, res) => {
 // ── Logout ────────────────────────────────────────────────────────────────────
 export const logout = async (req, res) => {
   try {
+    await logAudit({
+      userId: req.user.id,
+      action: "LOGOUT",
+      module: "Auth",
+      entityType: "User",
+      objectAffected: req.user.id,
+      status: "Success",
+      remarks: "User logged out",
+      req,
+    }).catch(() => {});
+
     res.clearCookie("token");
-    res.json({ message: "Logged out successfully" });
+    res.json({ success: true, message: "Logged out successfully" });
   } catch (err) {
     console.error("Error:", err);
     res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal Server Error" });
@@ -70,69 +134,61 @@ export const logout = async (req, res) => {
 };
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
-// ✅ No longer returns a link — saves a pending request for admin approval
 export const forgotPassword = async (req, res) => {
   try {
     const { username } = req.body;
 
     if (!username) {
-      return res.status(400).json({ message: "Username required" });
+      return res.status(400).json({ success: false, message: "Username required" });
     }
 
     await requestPasswordReset(username);
 
-    // Always return success — never reveal if user exists
     return res.json({
       success: true,
       message: "If an account was found, a reset request has been submitted for admin approval.",
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-// ── Reset Password (user submits new password with token) ────────────────────
+// ── Reset Password ────────────────────────────────────────────────────────────
 export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
     if (!token || !newPassword) {
-      return res.status(400).json({ message: "Token and password required" });
+      return res.status(400).json({ success: false, message: "Token and password required" });
     }
 
     await resetPasswordService(token, newPassword);
     return res.json({ success: true, message: "Password reset successful" });
   } catch (err) {
     console.error(err);
-    return res.status(400).json({ message: err.message || "Invalid or expired token" });
+    return res.status(400).json({ success: false, message: err.message || "Invalid or expired token" });
   }
 };
 
-// ── GET /auth/reset-requests — admin fetches all requests for their org ───────
+// ── GET /auth/reset-requests ──────────────────────────────────────────────────
 export const getResetRequests = async (req, res) => {
   try {
     const organizationId = req.user?.organizationId;
-
-    console.log("🔥 Logged-in user:", req.user);
-    console.log("🏢 Organization ID:", organizationId);
 
     const requests = await PasswordResetRequest.findAll({
       where: { organizationId },
       order: [["requestedAt", "DESC"]],
     });
 
-    console.log("📦 Requests found:", requests.length);
-    console.log("📦 Requests data:", requests);
-
     return res.json({ success: true, requests });
   } catch (err) {
     console.error("❌ ERROR in getResetRequests:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-// ── POST /auth/reset-requests/:id/approve — admin approves, gets the link ────
+// ── POST /auth/reset-requests/:id/approve ────────────────────────────────────
 export const approveResetRequest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -140,11 +196,11 @@ export const approveResetRequest = async (req, res) => {
     return res.json({ success: true, resetLink });
   } catch (err) {
     console.error(err);
-    return res.status(err.statusCode || 500).json({ message: err.message || "Internal server error" });
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
-// ── POST /auth/reset-requests/:id/reject — admin rejects the request ─────────
+// ── POST /auth/reset-requests/:id/reject ─────────────────────────────────────
 export const rejectResetRequest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -152,51 +208,38 @@ export const rejectResetRequest = async (req, res) => {
     return res.json({ success: true, message: "Request rejected" });
   } catch (err) {
     console.error(err);
-    return res.status(err.statusCode || 500).json({ message: err.message || "Internal server error" });
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
+// ── GET reset link ────────────────────────────────────────────────────────────
 export const getResetLink = async (req, res) => {
   try {
     const { username } = req.body;
 
     if (!username) {
-      return res.status(400).json({ message: "Username required" });
+      return res.status(400).json({ success: false, message: "Username required" });
     }
 
-    // Find user
     const user = await User.findOne({ where: { username } });
 
-    // Always respond safely (don't reveal too much)
     if (!user) {
-      return res.json({
-        message: "If approved, reset link will be available",
-      });
+      return res.json({ success: false, message: "If approved, reset link will be available" });
     }
 
-    // Check if admin approved (token exists)
     if (!user.resetPasswordToken) {
-      return res.json({
-        message: "Reset request not approved yet",
-      });
+      return res.json({ success: false, message: "Reset request not approved yet" });
     }
 
-    // Check expiry
     if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
-      return res.json({
-        message: "Reset link expired. Request again.",
-      });
+      return res.json({ success: false, message: "Reset link expired. Request again." });
     }
 
-    // Build link
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${user.resetPasswordToken}`;
 
-    return res.json({
-      success: true,
-      resetLink,
-    });
+    return res.json({ success: true, resetLink });
   } catch (err) {
     console.error("Error in getResetLink:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

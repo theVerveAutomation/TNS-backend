@@ -9,10 +9,31 @@ export const Alert = sequelize.define("Alert", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
-    cameraId: DataTypes.UUID,
-    alertType: DataTypes.STRING,
-    message: DataTypes.TEXT,
-    snapshotUrl: DataTypes.STRING,
+    cameraId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+    },
+    alertType: {
+        type: DataTypes.STRING(50), // e.g., 'FALL', 'TUSSLE'
+        allowNull: false,
+    },
+    confidence: {
+        type: DataTypes.DECIMAL(4, 3),
+        allowNull: true,
+    },
+    // File pointers on disk
+    snapshotPath: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    videoPath: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    message: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     severity: {
         type: DataTypes.ENUM("Low", "Medium", "High", "Critical"),
         defaultValue: "Low",
@@ -25,19 +46,54 @@ export const Alert = sequelize.define("Alert", {
         type: DataTypes.ENUM("Unverified", "Valid", "False Alarm"),
         defaultValue: "Unverified",
     },
-    actionTaken: DataTypes.TEXT,
-    acknowledgedBy: DataTypes.UUID,
-    responseTimeMin: DataTypes.INTEGER,
+    actionTaken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    acknowledgedBy: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+    responseTimeMin: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    isReviewed: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        field: "created_at",
+    },
 }, {
     tableName: "alerts",
     underscored: true,
     timestamps: true,
-    updatedAt: false, // Only uses created_at based on schema
+    updatedAt: false, // Using created_at only
+    indexes: [
+        {
+            name: "idx_alerts_camera_date",
+            fields: ["camera_id", "created_at"],
+            order: [["created_at", "DESC"]],
+        },
+        {
+            name: "idx_alerts_dashboard",
+            fields: ["created_at", "is_reviewed", "alert_type"],
+        },
+    ],
 });
 
-// Define Relationships
-Alert.belongsTo(Camera, { foreignKey: "cameraId" });
-Camera.hasMany(Alert, { foreignKey: "cameraId" });
+// Relationships
+// Note: If Camera.id is a UUID, you might get a warning here. 
+// It's best if Camera.id and Alert.cameraId are the same type.
+// Keep lightweight relationships but avoid enforcing DB-level foreign keys
+try {
+    Alert.belongsTo(Camera, { foreignKey: "cameraId", constraints: false });
+    Camera.hasMany(Alert, { foreignKey: "cameraId", constraints: false });
 
-Alert.belongsTo(User, { foreignKey: "acknowledgedBy" });
-User.hasMany(Alert, { foreignKey: "acknowledgedBy" });
+    Alert.belongsTo(User, { foreignKey: "acknowledgedBy", constraints: false });
+    User.hasMany(Alert, { foreignKey: "acknowledgedBy", constraints: false });
+} catch (e) {
+    // ignore if models load order causes issues
+}

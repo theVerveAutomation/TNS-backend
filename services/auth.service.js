@@ -6,28 +6,32 @@ import { AppError } from "../utils/AppError.js";
 import bcrypt from "bcrypt";
 
 export const registerUser = async (organizationId = "org02", username, email, password, role) => {
-    // Check if user already exists
     const existingUser = await User.findOne({ where: { organizationId, username } });
     if (existingUser) {
-        throw new AppError(409, "User already exists",);
+        throw new AppError(409, "User already exists");
     }
     validatePassword(password, username);
     const hashed = await hashPassword(password);
 
-    // Create user
     const newUser = await User.create({
         organizationId,
         email,
-        username: username,
+        username,
         password: hashed,
         role: role || "user",
         passwordHistory: [hashed],
         passwordChangedAt: new Date()
     });
 
-    const userData = { id: newUser.id, organizationId: newUser.organizationId, email: newUser.email, role: newUser.role, username: newUser.username };
-
-    return { user: userData };
+    return {
+        user: {
+            id: newUser.id,
+            organizationId: newUser.organizationId,
+            email: newUser.email,
+            role: newUser.role,
+            username: newUser.username
+        }
+    };
 };
 
 export const loginUser = async (organizationId = "org02", username, password, req) => {
@@ -53,13 +57,13 @@ export const loginUser = async (organizationId = "org02", username, password, re
         throw new AppError(423, "Account locked. Try later.");
     }
 
-    // check if ther use id active or not
-    if (user.status == "Inactive") {
+    // 🚫 INACTIVE CHECK — use .toLowerCase() to handle any casing in DB
+    if (user.status?.toLowerCase() === "inactive") {
         await log("FAIL", "Attempt to login to inactive account");
         throw new AppError(403, "Your account is inactive. Please contact admin support.");
     }
 
-    // Verify password
+    // 🔑 VERIFY PASSWORD
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         const attempts = user.failedAttempts + 1;
@@ -75,7 +79,7 @@ export const loginUser = async (organizationId = "org02", username, password, re
         throw new AppError(401, "Invalid Credentials");
     }
 
-    // ✅ SUCCESS RESET
+    // ✅ SUCCESS — reset failed attempts
     await user.update({
         failedAttempts: 0,
         lockUntil: null,
@@ -102,6 +106,7 @@ export const changePassword = async (userId, newPassword) => {
         throw new AppError(404, `User not found with id: ${userId}`);
     }
     validatePassword(newPassword, user.username);
+
     // ❌ REUSE CHECK
     const historyArr = Array.isArray(user.passwordHistory) ? user.passwordHistory : [];
     for (const old of historyArr) {
@@ -109,8 +114,10 @@ export const changePassword = async (userId, newPassword) => {
             throw new Error("Cannot reuse last 3 passwords");
         }
     }
+
     const hashed = await hashPassword(newPassword);
     const newHistory = [...historyArr, hashed].slice(-3);
+
     await user.update({
         password: hashed,
         passwordHistory: newHistory,

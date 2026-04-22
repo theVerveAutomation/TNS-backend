@@ -16,6 +16,9 @@ import userRoutes from "./routes/user.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import alertScheduleRoutes from "./routes/alertSchedule.routes.js";
+import mediaRoutes from "./routes/media.routes.js";
+import snapshotRoutes from "./routes/snapshot.route.js";
+import clipRoutes from "./routes/clip.route.js";
 import { getDashboardAlertsSummary } from "./controllers/dashboard.controller.js";
 import { runCameraHealthCheck } from "./services/cameraHealth.service.js";
 import { initSocket } from "./socket.js";
@@ -24,7 +27,6 @@ import { protect } from "./middleware/auth.middleware.js";
 import { sessionTimeout } from "./middleware/session.middleware.js";
 import "./jobs/cron.jobs.js";
 import sequelize from "./config/db.js";
-import { getIO } from "./socket.js";
 
 import "./models/Alert.js";
 import "./models/Camera.js";
@@ -55,6 +57,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/alert-schedule", alertScheduleRoutes);
+app.use("/api/media", mediaRoutes);
+app.use("/api/snapshots", snapshotRoutes);
+app.use('/api/clips', clipRoutes);
 app.get("/api/dashboard/alerts-summary", getDashboardAlertsSummary);
 
 // Protected route
@@ -95,7 +100,7 @@ sequelize
         let isRunning = false;
 
         setInterval(async () => {
-            if (isRunning) return; 
+            if (isRunning) return;
             isRunning = true;
 
             try {
@@ -103,7 +108,7 @@ sequelize
             } catch (err) {
                 console.error("❌ Camera health check error:", err);
             } finally {
-                isRunning = false; 
+                isRunning = false;
             }
         }, 10000);
 

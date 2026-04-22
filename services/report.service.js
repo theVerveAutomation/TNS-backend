@@ -2,7 +2,7 @@ import sequelize from "../config/db.js";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// ── Shared helper: maps raw alert_type to display label (case-insensitive) ───
+// ── Shared helper: maps raw alert_type to display label ──────────────────────
 const mapDetectionType = (alertType) => {
   const normalized = (alertType ?? "").toLowerCase().trim();
   if (normalized === "fall")   return "Fall Detection";
@@ -10,22 +10,35 @@ const mapDetectionType = (alertType) => {
   return alertType;
 };
 
-// ── Shared helper: builds a severity AND clause ──────────────────────────────
+// ── Shared helper: severity AND clause ───────────────────────────────────────
 const sevClause = (severity, tableAlias = null) => {
   if (!severity || severity === "all") return "";
   const col = tableAlias ? `${tableAlias}.severity` : "severity";
   return `AND LOWER(${col}::text) = '${severity.toLowerCase()}'`;
 };
 
+/**
+ * Parses the incoming `dateParam` (YYYY-MM-DD, ISO string, or undefined)
+ * and returns a safe JS Date. Falls back to `fallback` if invalid/missing.
+ */
+const parseDate = (dateParam, fallback) => {
+  if (!dateParam) return fallback;
+  const d = new Date(dateParam);
+  return isNaN(d.getTime()) ? fallback : d;
+};
+
 /* =========================================================
    📊 DAILY REPORT SERVICE
+   Accepts: date (YYYY-MM-DD) — defaults to today
 ========================================================= */
-export const getDailyReportData = async (severity = "all") => {
+export const getDailyReportData = async (severity = "all", dateParam = null) => {
   try {
-    // ── FIX: CURRENT_DATE cannot have AT TIME ZONE applied to it ─────────────
-    const todayFilter = `
-      DATE(created_at AT TIME ZONE 'Asia/Colombo') = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Colombo')::date
-    `;
+    // Resolve the target date — use passed date or today in Colombo time
+    const targetDate = dateParam
+      ? `'${dateParam}'::date`
+      : `(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Colombo')::date`;
+
+    const todayFilter = `DATE(created_at AT TIME ZONE 'Asia/Colombo') = ${targetDate}`;
     const sw  = sevClause(severity);
     const swa = sevClause(severity, "a");
 
@@ -57,7 +70,7 @@ export const getDailyReportData = async (severity = "all") => {
       FROM hours
       LEFT JOIN alerts a
         ON EXTRACT(HOUR FROM a.created_at AT TIME ZONE 'Asia/Colombo') = hours.h
-        AND ${todayFilter.replace('created_at', 'a.created_at')}
+        AND DATE(a.created_at AT TIME ZONE 'Asia/Colombo') = ${targetDate}
         ${swa}
       GROUP BY hours.h
       ORDER BY hours.h
@@ -85,7 +98,7 @@ export const getDailyReportData = async (severity = "all") => {
       FROM cameras c
       LEFT JOIN alerts a
         ON a.camera_id = c.id
-        AND ${todayFilter.replace('created_at', 'a.created_at')}
+        AND DATE(a.created_at AT TIME ZONE 'Asia/Colombo') = ${targetDate}
         ${swa}
       GROUP BY c.name
       ORDER BY c.name
@@ -117,8 +130,13 @@ export const getDailyReportData = async (severity = "all") => {
       sharePercent: `${r.percentage}%`
     }));
 
+    // Use the resolved date for the label
+    const reportDateLabel = dateParam
+      ? new Date(dateParam + "T00:00:00").toLocaleDateString()
+      : new Date().toLocaleDateString();
+
     return {
-      reportDate:      new Date().toLocaleDateString(),
+      reportDate:      reportDateLabel,
       totalDetections: totals[0]?.total_detections ?? 0,
       totalAlerts:     totals[0]?.total_alerts      ?? 0,
       activeLocations: totals[0]?.active_locations  ?? 0,
@@ -136,19 +154,33 @@ export const getDailyReportData = async (severity = "all") => {
 
 /* =========================================================
    📊 WEEKLY REPORT SERVICE
+   Accepts: weekStart (YYYY-MM-DD) — defaults to current week Monday
 ========================================================= */
-export const getWeeklyReportData = async (severity = "all") => {
+export const getWeeklyReportData = async (severity = "all", weekStartParam = null) => {
   try {
-    const [range] = await sequelize.query(`
-      SELECT 
-        DATE_TRUNC('week', NOW()) AS start,
-        DATE_TRUNC('week', NOW()) + INTERVAL '6 days' AS end
-    `);
+    // Resolve week start & end from param or default to current week
+    let weekStartISO, weekEndISO;
 
-    const weekStart = range[0].start;
-    const weekEnd   = range[0].end;
-    const sw        = sevClause(severity);
-    const swa       = sevClause(severity, "a");
+    if (weekStartParam) {
+      // Parse the provided week start date
+      const ws = new Date(weekStartParam + "T00:00:00");
+      const we = new Date(ws);
+      we.setDate(ws.getDate() + 6);
+      weekStartISO = ws.toISOString();
+      weekEndISO   = we.toISOString();
+    } else {
+      // Default: current week Monday → Sunday
+      const [range] = await sequelize.query(`
+        SELECT 
+          DATE_TRUNC('week', NOW()) AS start,
+          DATE_TRUNC('week', NOW()) + INTERVAL '6 days' AS end
+      `);
+      weekStartISO = new Date(range[0].start).toISOString();
+      weekEndISO   = new Date(range[0].end).toISOString();
+    }
+
+    const sw  = sevClause(severity);
+    const swa = sevClause(severity, "a");
 
     const [totals] = await sequelize.query(`
       SELECT 
@@ -156,11 +188,11 @@ export const getWeeklyReportData = async (severity = "all") => {
         COUNT(*)::int AS total_alerts,
         COUNT(*) FILTER (WHERE severity = 'Critical')::int AS critical_incidents
       FROM alerts
-      WHERE created_at >= NOW() - INTERVAL '7 days'
+      WHERE created_at >= :weekStart AND created_at <= :weekEnd
       ${sw}
-    `);
+    `, { replacements: { weekStart: weekStartISO, weekEnd: weekEndISO } });
 
-    const avgDaily = Math.round(totals[0].total_detections / 7);
+    const avgDaily = Math.round((totals[0].total_detections ?? 0) / 7);
 
     const [daily] = await sequelize.query(`
       SELECT 
@@ -176,11 +208,11 @@ export const getWeeklyReportData = async (severity = "all") => {
           END
         ) AS avg_severity
       FROM alerts
-      WHERE created_at >= NOW() - INTERVAL '7 days'
+      WHERE created_at >= :weekStart AND created_at <= :weekEnd
       ${sw}
       GROUP BY day
       ORDER BY MIN(created_at)
-    `);
+    `, { replacements: { weekStart: weekStartISO, weekEnd: weekEndISO } });
 
     const dailyMap = new Map(
       daily.map(r => [r.day, {
@@ -213,10 +245,10 @@ export const getWeeklyReportData = async (severity = "all") => {
         ) AS avg_severity
       FROM cameras c
       LEFT JOIN alerts a ON a.camera_id = c.id
-      WHERE a.created_at >= NOW() - INTERVAL '7 days'
+      WHERE a.created_at >= :weekStart AND a.created_at <= :weekEnd
       ${swa}
       GROUP BY c.name
-    `);
+    `, { replacements: { weekStart: weekStartISO, weekEnd: weekEndISO } });
 
     const locationSummary = locations.map(r => ({
       cameraName:  r.camera_name,
@@ -232,12 +264,12 @@ export const getWeeklyReportData = async (severity = "all") => {
       SELECT 
         LOWER(alert_type) AS alert_type,
         COUNT(*)::int AS count,
-        ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) AS percentage
+        ROUND(COUNT(*) * 100.0 / NULLIF(SUM(COUNT(*)) OVER (), 0), 1) AS percentage
       FROM alerts
-      WHERE created_at >= NOW() - INTERVAL '7 days'
+      WHERE created_at >= :weekStart AND created_at <= :weekEnd
       ${sw}
       GROUP BY LOWER(alert_type)
-    `);
+    `, { replacements: { weekStart: weekStartISO, weekEnd: weekEndISO } });
 
     const detectionTypeDistribution = types.map(r => ({
       type:         mapDetectionType(r.alert_type),
@@ -246,12 +278,12 @@ export const getWeeklyReportData = async (severity = "all") => {
     }));
 
     return {
-      weekStart:          new Date(weekStart).toDateString(),
-      weekEnd:            new Date(weekEnd).toDateString(),
-      totalDetections:    totals[0].total_detections,
+      weekStart:          new Date(weekStartISO).toDateString(),
+      weekEnd:            new Date(weekEndISO).toDateString(),
+      totalDetections:    totals[0].total_detections    ?? 0,
       avgDailyDetections: avgDaily,
-      totalAlerts:        totals[0].total_alerts,
-      criticalIncidents:  totals[0].critical_incidents,
+      totalAlerts:        totals[0].total_alerts         ?? 0,
+      criticalIncidents:  totals[0].critical_incidents   ?? 0,
       dailyTrend,
       locationSummary,
       detectionTypeDistribution
@@ -265,19 +297,37 @@ export const getWeeklyReportData = async (severity = "all") => {
 
 /* =========================================================
    📊 MONTHLY PERFORMANCE REPORT SERVICE
+   Accepts: month (YYYY-MM-DD, the last day of the target month)
+            — defaults to current month
 ========================================================= */
-export const getMonthlyPerformanceReportData = async (severity = "all") => {
+export const getMonthlyPerformanceReportData = async (severity = "all", monthParam = null) => {
   try {
-    const [range] = await sequelize.query(`
-      SELECT 
-        DATE_TRUNC('month', NOW()) AS start,
-        DATE_TRUNC('month', NOW()) + INTERVAL '1 month - 1 day' AS end
-    `);
+    // Resolve month start/end from param or default to current month
+    let start, end, monthLabel;
 
-    const start = new Date(range[0].start).toISOString();
-    const end   = new Date(range[0].end).toISOString();
-    const sw    = sevClause(severity);
-    const swa   = sevClause(severity, "a");
+    if (monthParam) {
+      // monthParam is the last day of the chosen month e.g. "2026-02-28"
+      const anchor = new Date(monthParam + "T00:00:00");
+      // First day of that month
+      const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      // Last day of that month
+      const last  = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+      start       = first.toISOString();
+      end         = last.toISOString();
+      monthLabel  = first.toLocaleString("default", { month: "long", year: "numeric" });
+    } else {
+      const [range] = await sequelize.query(`
+        SELECT 
+          DATE_TRUNC('month', NOW()) AS start,
+          DATE_TRUNC('month', NOW()) + INTERVAL '1 month - 1 day' AS end
+      `);
+      start      = new Date(range[0].start).toISOString();
+      end        = new Date(range[0].end).toISOString();
+      monthLabel = new Date().toLocaleString("default", { month: "long", year: "numeric" });
+    }
+
+    const sw  = sevClause(severity);
+    const swa = sevClause(severity, "a");
 
     // ── Totals ────────────────────────────────────────────────────────────────
     const [totals] = await sequelize.query(`
@@ -289,12 +339,26 @@ export const getMonthlyPerformanceReportData = async (severity = "all") => {
       ${sw}
     `, { replacements: { start, end } });
 
-    const totalDetections   = totals[0].total;
-    const totalAlerts       = totals[0].total;
-    const criticalIncidents = totals[0].critical;
-    const avgDailyDetection = Math.round(totalDetections / 30);
+    const totalDetections   = totals[0].total    ?? 0;
+    const totalAlerts       = totals[0].total    ?? 0;
+    const criticalIncidents = totals[0].critical ?? 0;
 
-    // ── Current vs last month ─────────────────────────────────────────────────
+    // Days in the selected month for avg calculation
+    const daysInMonth = new Date(
+      new Date(end).getFullYear(),
+      new Date(end).getMonth() + 1,
+      0
+    ).getDate();
+    const avgDailyDetection = Math.round(totalDetections / daysInMonth);
+
+    // ── Current vs previous month ─────────────────────────────────────────────
+    // Compute prev month bounds from our resolved start
+    const startDate   = new Date(start);
+    const prevFirst   = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
+    const prevLast    = new Date(startDate.getFullYear(), startDate.getMonth(), 0);
+    const prevStart   = prevFirst.toISOString();
+    const prevEnd     = prevLast.toISOString();
+
     const sevInline = (!severity || severity === "all")
       ? ""
       : `AND LOWER(severity::text) = '${severity.toLowerCase()}'`;
@@ -302,15 +366,15 @@ export const getMonthlyPerformanceReportData = async (severity = "all") => {
     const [compare] = await sequelize.query(`
       SELECT
         COUNT(*) FILTER (
-          WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
+          WHERE created_at BETWEEN :start AND :end
           ${sevInline}
         ) AS this_month,
         COUNT(*) FILTER (
-          WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW() - INTERVAL '1 month')
+          WHERE created_at BETWEEN :prevStart AND :prevEnd
           ${sevInline}
         ) AS last_month
       FROM alerts
-    `);
+    `, { replacements: { start, end, prevStart, prevEnd } });
 
     const thisMonth    = Number(compare[0].this_month) || 0;
     const lastMonthRaw = Number(compare[0].last_month) || 0;
@@ -323,7 +387,7 @@ export const getMonthlyPerformanceReportData = async (severity = "all") => {
       currentVsLastMonth = `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`;
     }
 
-    // ── Detection accuracy — FIX: now includes ${sw} severity filter ──────────
+    // ── Detection accuracy ────────────────────────────────────────────────────
     const [accuracy] = await sequelize.query(`
       SELECT 
         COUNT(*) FILTER (WHERE validation_status = 'Valid') AS valid,
@@ -406,17 +470,18 @@ export const getMonthlyPerformanceReportData = async (severity = "all") => {
       sharePercent: `${r.percentage ?? Math.round((r.count / totalTypeCount) * 100)}%`
     }));
 
-    // ── Yearly trend ──────────────────────────────────────────────────────────
+    // ── Yearly trend (all months of the selected year) ────────────────────────
+    const selectedYear = new Date(start).getFullYear();
     const [yearly] = await sequelize.query(`
       SELECT 
         TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') AS month,
         COUNT(*)::int AS detections
       FROM alerts
-      WHERE created_at >= DATE_TRUNC('year', NOW())
+      WHERE EXTRACT(YEAR FROM created_at) = :year
       ${sw}
       GROUP BY DATE_TRUNC('month', created_at)
       ORDER BY DATE_TRUNC('month', created_at)
-    `);
+    `, { replacements: { year: selectedYear } });
 
     const yearlyTrend = yearly.map(r => ({
       month:      r.month,
@@ -450,7 +515,7 @@ export const getMonthlyPerformanceReportData = async (severity = "all") => {
     }));
 
     return {
-      month: new Date().toLocaleString("default", { month: "long", year: "numeric" }),
+      month: monthLabel,
       totalDetections,
       totalAlerts,
       avgDailyDetection,
@@ -472,18 +537,31 @@ export const getMonthlyPerformanceReportData = async (severity = "all") => {
 
 /* =========================================================
    📊 MONTHLY ACCOUNT REPORT SERVICE
+   Accepts: month (YYYY-MM-DD, last day of target month)
+            — defaults to current month
    (no severity filter — this is about user accounts)
 ========================================================= */
-export const getMonthlyAccountReportData = async () => {
+export const getMonthlyAccountReportData = async (monthParam = null) => {
   try {
-    const [range] = await sequelize.query(`
-      SELECT 
-        DATE_TRUNC('month', NOW()) AS start,
-        DATE_TRUNC('month', NOW()) + INTERVAL '1 month - 1 day' AS end
-    `);
+    let start, end, reportMonthLabel;
 
-    const start = range[0].start;
-    const end   = range[0].end;
+    if (monthParam) {
+      const anchor = new Date(monthParam + "T00:00:00");
+      const first  = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      const last   = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+      start            = first.toISOString();
+      end              = last.toISOString();
+      reportMonthLabel = first.toLocaleString("default", { month: "long", year: "numeric" });
+    } else {
+      const [range] = await sequelize.query(`
+        SELECT 
+          DATE_TRUNC('month', NOW()) AS start,
+          DATE_TRUNC('month', NOW()) + INTERVAL '1 month - 1 day' AS end
+      `);
+      start            = range[0].start;
+      end              = range[0].end;
+      reportMonthLabel = String(new Date().toLocaleString("default", { month: "long", year: "numeric" }));
+    }
 
     const [totals] = await sequelize.query(`
       SELECT 
@@ -533,7 +611,7 @@ export const getMonthlyAccountReportData = async () => {
     const t = totals[0] ?? {};
 
     return {
-      reportMonth:   String(new Date().toLocaleString("default", { month: "long", year: "numeric" })),
+      reportMonth:   reportMonthLabel,
       generatedDate: String(new Date().toLocaleDateString()),
       newAccounts:        Number(t.new_accounts        ?? 0),
       inactiveSuspended:  Number(t.inactive_suspended  ?? 0),

@@ -52,7 +52,7 @@ export const updateUser = async (req, res) => {
     const updatedUser = await userService.updateUser(req.params.id, req.body);
 
     await logAudit({
-      userId: req.user.id,
+      userId: req.user?.id || null,
       action: "USER_UPDATED",
       module: "User Mgmt",
       entityType: "User",

@@ -1,3 +1,4 @@
+import os from "os";
 import { Op, fn, col } from "sequelize";
 import sequelize from "../config/db.js";
 import { Alert } from "../models/Alert.js";
@@ -67,11 +68,135 @@ export const getDashboardSummaryService = async () => {
   const fallTrend = fallDiff >= 0 ? "up" : "down";
   const tussleTrend = tussleDiff >= 0 ? "up" : "down";
 
-  // ── System Health ──────────────────────────────────────────────────────────
-  const systemHealth =
+  // ── System Health (COMPOSITE) ──────────────────────────────────────────────
+
+  // =======================
+  // 1. VIDEO HEALTH (40%)
+  // =======================
+
+  const normalCameras = await Camera.count({
+    where: { status: "normal" },
+  });
+
+  const warningCameras = await Camera.count({
+    where: { status: "warning" },
+  });
+
+  const detectionEnabled = await Camera.count({
+    where: { detection: true },
+  });
+
+  const availabilityScore =
     totalCameras === 0
       ? 0
-      : Math.round((onlineCameras / totalCameras) * 100);
+      : (normalCameras / totalCameras) * 100;
+
+  const stabilityScore =
+    totalCameras === 0
+      ? 0
+      : ((normalCameras + warningCameras * 0.5) / totalCameras) * 100;
+
+  const activityScore =
+    totalCameras === 0
+      ? 0
+      : (detectionEnabled / totalCameras) * 100;
+
+  const videoHealth = Math.round(
+    availabilityScore * 0.5 +
+    stabilityScore * 0.3 +
+    activityScore * 0.2
+  );
+
+  // =======================
+  // 2. SYSTEM RESOURCES (30%)
+  // =======================
+
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+
+  const memoryUsagePercent = (1 - freeMem / totalMem) * 100;
+  const memoryHealth = Math.max(0, 100 - memoryUsagePercent);
+
+  const cpuLoad = os.loadavg()[0];
+  const cpuCores = os.cpus().length;
+
+  const cpuUsagePercent = (cpuLoad / cpuCores) * 100;
+  const cpuHealth = Math.max(0, 100 - cpuUsagePercent);
+
+  const systemResourceHealth = Math.round(
+    cpuHealth * 0.5 +
+    memoryHealth * 0.5
+  );
+
+  // =======================
+  // 3. ALERT RELIABILITY (30%)
+  // =======================
+
+  const totalAlerts = await Alert.count({
+    where: { created_at: { [Op.gte]: todayStart } },
+  });
+
+  const processedAlerts = await Alert.count({
+    where: {
+      response_time_min: { [Op.ne]: null },
+      created_at: { [Op.gte]: todayStart },
+    },
+  });
+
+  const processingRate =
+    totalAlerts === 0
+      ? 100
+      : (processedAlerts / totalAlerts) * 100;
+
+  const falseAlerts = await Alert.count({
+    where: {
+      validation_status: "False Alarm",
+      created_at: { [Op.gte]: todayStart },
+    },
+  });
+
+  const falseRate =
+    totalAlerts === 0
+      ? 0
+      : (falseAlerts / totalAlerts) * 100;
+
+  const accuracyHealth = Math.max(0, 100 - falseRate);
+
+  const avgResponse = await Alert.findOne({
+    attributes: [[fn("AVG", col("response_time_min")), "avgResponse"]],
+    where: {
+      response_time_min: { [Op.ne]: null },
+      created_at: { [Op.gte]: todayStart },
+    },
+    raw: true,
+  });
+
+  const avgResponseTime = avgResponse?.avgResponse
+    ? parseFloat(avgResponse.avgResponse)
+    : 0;
+
+  const MAX_RESPONSE_TIME = 5;
+
+  const responseHealth = Math.max(
+    0,
+    100 - (avgResponseTime / MAX_RESPONSE_TIME) * 100
+  );
+
+  const alertHealth = Math.round(
+    processingRate * 0.4 +
+    accuracyHealth * 0.3 +
+    responseHealth * 0.3
+  );
+
+  // =======================
+  // FINAL SYSTEM HEALTH
+  // =======================
+
+  const systemHealth = Math.round(
+    videoHealth * 0.4 +
+    systemResourceHealth * 0.3 +
+    alertHealth * 0.3
+  );
 
   // ── Final Response ─────────────────────────────────────────────────────────
   return {
@@ -84,6 +209,11 @@ export const getDashboardSummaryService = async () => {
     tussleChange,
     tussleTrend,
     systemHealth,
+    systemHealthBreakdown: {
+      videoHealth,
+      systemResourceHealth,
+      alertHealth,
+    },
   };
 };
 
@@ -272,7 +402,8 @@ export const getTodaySummary = async () => {
 };
 
 // =============================================================================
-// Severity Pie chart =============================================================================
+// Severity Pie chart
+// =============================================================================
 export const getAlertsBySeverityService = async () => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);

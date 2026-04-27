@@ -16,7 +16,7 @@ export const createUser = async (req, res) => {
       status: "Success",
       remarks: `Created user ${newUser.username}`,
       req,
-    }).catch(() => {}); 
+    }).catch(() => { });
 
     res.status(201).json({ success: true, user: newUser });
   } catch (err) {
@@ -52,7 +52,7 @@ export const updateUser = async (req, res) => {
     const updatedUser = await userService.updateUser(req.params.id, req.body);
 
     await logAudit({
-      userId: req.user.id,
+      userId: req.user?.id || null,
       action: "USER_UPDATED",
       module: "User Mgmt",
       entityType: "User",
@@ -62,7 +62,7 @@ export const updateUser = async (req, res) => {
       status: "Success",
       remarks: `Updated user ${updatedUser.username}`,
       req,
-    }).catch(() => {}); // ✅ safe — logging failure won't break the API
+    }).catch(() => { }); // ✅ safe — logging failure won't break the API
 
     res.json({ success: true, user: updatedUser });
   } catch (err) {
@@ -76,19 +76,23 @@ export const deleteUser = async (req, res) => {
     const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    await userService.deleteUser(req.params.id);
 
     await logAudit({
-      userId: req.user.id,
+      userId: req.params.id,
       action: "USER_DELETED",
       module: "User Mgmt",
       entityType: "User",
-      objectAffected: user.id,
+      objectAffected: req.params.id,
       oldValue: user.toJSON(),
       status: "Success",
       remarks: `Deleted user ${user.username}`,
       req,
-    }).catch(() => {}); 
+    }).catch(() => {
+      console.error("Audit log failed for user deletion");
+    });
+
+    await userService.deleteUser(req.params.id);
+
 
     res.json({ success: true, message: "User deleted" });
   } catch (err) {

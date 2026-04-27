@@ -6,7 +6,15 @@ import { isWithinSchedule } from "../utils/scheduleChecker.js";
 import { sendAlertNotification } from "../services/notification.service.js";
 
 export const createAlert = async (data) => {
+
     const camera = await Camera.findByPk(data.cameraId);
+
+    if (!camera) {
+        throw new Error("Camera not found");
+    }
+
+    // ✅ Convert cam1 → UUID
+    data.cameraId = camera.id;
 
     console.log("📷 Camera:", camera);
 
@@ -16,7 +24,6 @@ export const createAlert = async (data) => {
 
     console.log("🧠 Schedule from DB:", schedule);
 
-    // 🔥 ADD THIS LINE
     const allowed = isWithinSchedule(schedule);
 
     console.log("⏱ Schedule check result:", allowed);
@@ -56,7 +63,7 @@ export const deleteAlert = async (id) => {
 };
 
 export const getRecentAlerts = async ({ limit = 10 }) => {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000); 
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     return await Alert.findAll({
         where: {

@@ -7,12 +7,13 @@ import {
 
 /* =========================================================
    📊 DAILY REPORT CONTROLLER
-   Handles HTTP request for Daily Detection Summary
+   Query params: severity, date (YYYY-MM-DD)
 ========================================================= */
 export const getDailyReport = async (req, res) => {
   try {
-    const severity = req.query.severity ?? "all";
-    const data = await getDailyReportData(severity);
+    const severity  = req.query.severity ?? "all";
+    const dateParam = req.query.date     ?? null;
+    const data = await getDailyReportData(severity, dateParam);
     res.status(200).json(data);
   } catch (error) {
     console.error("Daily report controller error:", error);
@@ -22,11 +23,13 @@ export const getDailyReport = async (req, res) => {
 
 /* =========================================================
    📊 WEEKLY REPORT CONTROLLER
+   Query params: severity, week_start (YYYY-MM-DD)
 ========================================================= */
 export const getWeeklyReport = async (req, res) => {
   try {
-    const severity = req.query.severity ?? "all";
-    const data = await getWeeklyReportData(severity);
+    const severity       = req.query.severity   ?? "all";
+    const weekStartParam = req.query.week_start ?? null;
+    const data = await getWeeklyReportData(severity, weekStartParam);
     res.json(data);
   } catch (error) {
     console.error("Weekly report error:", error);
@@ -36,11 +39,13 @@ export const getWeeklyReport = async (req, res) => {
 
 /* =========================================================
    📊 MONTHLY PERFORMANCE REPORT CONTROLLER
+   Query params: severity, month (YYYY-MM-DD, last day of month)
 ========================================================= */
 export const getMonthlyReport = async (req, res) => {
   try {
-    const severity = req.query.severity ?? "all";
-    const data = await getMonthlyPerformanceReportData(severity);
+    const severity   = req.query.severity ?? "all";
+    const monthParam = req.query.month    ?? null;
+    const data = await getMonthlyPerformanceReportData(severity, monthParam);
     res.json(data);
   } catch (error) {
     console.error("Monthly report error:", error);
@@ -50,11 +55,12 @@ export const getMonthlyReport = async (req, res) => {
 
 /* =========================================================
    📊 MONTHLY ACCOUNT REPORT CONTROLLER
+   Query params: month (YYYY-MM-DD, last day of month)
 ========================================================= */
 export const getMonthlyAccountReport = async (req, res) => {
   try {
-    const severity = req.query.severity ?? "all";
-    const data = await getMonthlyAccountReportData(severity);
+    const monthParam = req.query.month ?? null;
+    const data = await getMonthlyAccountReportData(monthParam);
     res.json(data);
   } catch (error) {
     console.error("Monthly account report error:", error);

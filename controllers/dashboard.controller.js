@@ -22,7 +22,7 @@ export const getDashboardAlertsSummary = async (req, res) => {
       const created = new Date(alert.createdAt);
       return (
         !alert.isReviewed &&
-        now.getTime() - created.getTime() > 60 * 60 * 1000
+        now.getTime() - created.getTime() > 24 * 60 * 60 * 1000 // 1 day
       );
     };
 

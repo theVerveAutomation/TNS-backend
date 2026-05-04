@@ -22,7 +22,7 @@ export const getDashboardAlertsSummary = async (req, res) => {
       const created = new Date(alert.createdAt);
       return (
         !alert.isReviewed &&
-        now.getTime() - created.getTime() > 60 * 60 * 1000
+        now.getTime() - created.getTime() > 24 * 60 * 60 * 1000
       );
     };
 
@@ -50,20 +50,20 @@ export const getDashboardAlertsSummary = async (req, res) => {
       fall: {
         overdueCount: fall.overdue.length,
         todayCount: fall.today.length,
-        overdue: fall.overdue.slice(0, 5),
-        today: fall.today.slice(0, 5),
+        overdue: fall.overdue,
+        today: fall.today,
       },
       tussle: {
         overdueCount: tussle.overdue.length,
         todayCount: tussle.today.length,
-        overdue: tussle.overdue.slice(0, 5),
-        today: tussle.today.slice(0, 5),
+        overdue: tussle.overdue,
+        today: tussle.today,
       },
       camera: {
         overdueCount: cameraAlerts.filter(isOverdue).length,
         todayCount: cameraAlerts.filter((a) => isToday(a.createdAt) && !isOverdue(a)).length,
-        overdue: cameraAlerts.filter(isOverdue).slice(0, 5),
-        today: cameraAlerts.filter((a) => isToday(a.createdAt) && !isOverdue(a)).slice(0, 5),
+        overdue: cameraAlerts.filter(isOverdue),
+        today: cameraAlerts.filter((a) => isToday(a.createdAt) && !isOverdue(a)),
       },
     });
   } catch (err) {

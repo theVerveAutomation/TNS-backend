@@ -3,6 +3,25 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": "index.js",
+  "pkg": {
+    "scripts": [
+      "index.js",
+      "socket.js",
+      "config/**/*.js",
+      "controllers/**/*.js",
+      "jobs/**/*.js",
+      "middleware/**/*.js",
+      "models/**/*.js",
+      "routes/**/*.js",
+      "services/**/*.js",
+      "utils/**/*.js",
+      "node_modules/pg/**/*.js"
+    ],
+    "assets": [
+      ".env"
+    ]
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
@@ -15,13 +34,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "bugs": {
     "url": "https://github.com/theVerveAutomation/TNS-backend/issues"
   },
   "homepage": "https://github.com/theVerveAutomation/TNS-backend#readme",
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "crypto": "^1.0.1",

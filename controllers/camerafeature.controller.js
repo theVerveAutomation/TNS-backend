@@ -1,6 +1,6 @@
-import * as cameraFeatureService from "../services/camerafeature.service.js";
+const cameraFeatureService = require("../services/camerafeature.service.js");
 
-export const createCameraFeature = async (req, res) => {
+const createCameraFeature = async (req, res) => {
     try {
         const cameraFeature = await cameraFeatureService.createCameraFeature(req.body);
         res.status(201).json({ success: true, cameraFeature });
@@ -9,7 +9,7 @@ export const createCameraFeature = async (req, res) => {
     }
 };
 
-export const getAllCameraFeatures = async (req, res) => {
+const getAllCameraFeatures = async (req, res) => {
     try {
         const cameraFeatures = await cameraFeatureService.getAllCameraFeatures();
         res.json({ success: true, cameraFeatures });
@@ -18,7 +18,7 @@ export const getAllCameraFeatures = async (req, res) => {
     }
 };
 
-export const getCameraFeatureById = async (req, res) => {
+const getCameraFeatureById = async (req, res) => {
     try {
         const cameraFeature = await cameraFeatureService.getCameraFeatureById(req.params.id);
         if (!cameraFeature) return res.status(404).json({ success: false, message: "CameraFeature not found" });
@@ -28,7 +28,7 @@ export const getCameraFeatureById = async (req, res) => {
     }
 };
 
-export const updateCameraFeature = async (req, res) => {
+const updateCameraFeature = async (req, res) => {
     try {
         const cameraFeature = await cameraFeatureService.updateCameraFeature(req.params.id, req.body);
         if (!cameraFeature) return res.status(404).json({ success: false, message: "CameraFeature not found" });
@@ -38,7 +38,7 @@ export const updateCameraFeature = async (req, res) => {
     }
 };
 
-export const deleteCameraFeature = async (req, res) => {
+const deleteCameraFeature = async (req, res) => {
     try {
         const result = await cameraFeatureService.deleteCameraFeature(req.params.id);
         if (!result) return res.status(404).json({ success: false, message: "CameraFeature not found" });
@@ -46,4 +46,12 @@ export const deleteCameraFeature = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
+};
+
+module.exports = {
+    createCameraFeature,
+    getAllCameraFeatures,
+    getCameraFeatureById,
+    updateCameraFeature,
+    deleteCameraFeature,
 };

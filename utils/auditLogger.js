@@ -1,9 +1,9 @@
-import { AuditLog } from "../models/AuditLog.js";
-import { User } from "../models/User.js";
-import { Camera } from "../models/Camera.js";
-import { Alert } from "../models/Alert.js";
+const { AuditLog } = require("../models/AuditLog.js");
+const { User } = require("../models/User.js");
+const { Camera } = require("../models/Camera.js");
+const { Alert } = require("../models/Alert.js");
 
-export const logAudit = async ({
+const logAudit = async ({
   userId = null,
   action,
   module,
@@ -74,3 +74,5 @@ export const logAudit = async ({
     console.error("Audit log failed:", err.message);
   }
 };
+
+module.exports = { logAudit };

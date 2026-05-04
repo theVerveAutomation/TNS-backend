@@ -1,14 +1,14 @@
 // services/passwordReset.service.js
-import crypto from "crypto";
-import { User } from "../models/User.js";
-import { PasswordResetRequest } from "../models/PasswordResetRequest.js";
-import { AppError } from "../utils/AppError.js";
+const crypto = require("crypto");
+const { User } = require("../models/User.js");
+const { PasswordResetRequest } = require("../models/PasswordResetRequest.js");
+const { AppError } = require("../utils/AppError.js");
 
 const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 // ── Called when user submits forgot-password form ────────────────────────────
 // Does NOT generate a link. Just saves a pending request for admin to review.
-export const requestPasswordReset = async (username) => {
+const requestPasswordReset = async (username) => {
   const user = await User.findOne({ where: { username } });
 
   // Always resolve silently — don't reveal if username exists or not
@@ -33,7 +33,7 @@ export const requestPasswordReset = async (username) => {
 
 // ── Called when admin approves a request ─────────────────────────────────────
 // Generates the actual reset token + link and returns it to the admin.
-export const approvePasswordResetRequest = async (requestId) => {
+const approvePasswordResetRequest = async (requestId) => {
   const request = await PasswordResetRequest.findByPk(requestId);
 
   if (!request) throw new AppError(404, "Reset request not found");
@@ -63,7 +63,7 @@ export const approvePasswordResetRequest = async (requestId) => {
 };
 
 // ── Called when admin rejects a request ──────────────────────────────────────
-export const rejectPasswordResetRequest = async (requestId) => {
+const rejectPasswordResetRequest = async (requestId) => {
   const request = await PasswordResetRequest.findByPk(requestId);
 
   if (!request) throw new AppError(404, "Reset request not found");
@@ -76,7 +76,7 @@ export const rejectPasswordResetRequest = async (requestId) => {
 };
 
 // ── Called when user submits the reset-password form with token ───────────────
-export const resetPasswordService = async (token, newPassword) => {
+const resetPasswordService = async (token, newPassword) => {
   const user = await User.findOne({
     where: { resetPasswordToken: token },
   });
@@ -87,7 +87,7 @@ export const resetPasswordService = async (token, newPassword) => {
   }
 
   // Delegate to auth service change password logic
-  const { changePassword } = await import("./auth.service.js");
+  const { changePassword } = require("./auth.service.js");
   await changePassword(user.id, newPassword);
 
   // Clear the token
@@ -95,4 +95,11 @@ export const resetPasswordService = async (token, newPassword) => {
     resetPasswordToken: null,
     resetPasswordExpires: null,
   });
+};
+
+module.exports = {
+  requestPasswordReset,
+  approvePasswordResetRequest,
+  rejectPasswordResetRequest,
+  resetPasswordService,
 };

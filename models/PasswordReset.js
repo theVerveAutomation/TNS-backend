@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
 
-export const PasswordReset = sequelize.define("password_resets", {
+const PasswordReset = sequelize.define("password_resets", {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -23,3 +23,5 @@ export const PasswordReset = sequelize.define("password_resets", {
 }, {
   timestamps: false,
 });
+
+module.exports = { PasswordReset };

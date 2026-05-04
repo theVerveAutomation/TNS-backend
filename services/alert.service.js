@@ -1,11 +1,11 @@
-import { Op } from "sequelize";
-import { Alert } from "../models/Alert.js";
-import { AlertSchedule } from "../models/AlertSchedule.js";
-import { Camera } from "../models/Camera.js";
-import { isWithinSchedule } from "../utils/scheduleChecker.js";
-import { sendAlertNotification } from "../services/notification.service.js";
+const { Op } = require("sequelize");
+const { Alert } = require("../models/Alert.js");
+const { AlertSchedule } = require("../models/AlertSchedule.js");
+const { Camera } = require("../models/Camera.js");
+const { isWithinSchedule } = require("../utils/scheduleChecker.js");
+const { sendAlertNotification } = require("../services/notification.service.js");
 
-export const createAlert = async (data) => {
+const createAlert = async (data) => {
 
     const camera = await Camera.findByPk(data.cameraId);
 
@@ -40,29 +40,29 @@ export const createAlert = async (data) => {
     return alert;
 };
 
-export const getAllAlerts = async () => {
+const getAllAlerts = async () => {
     return await Alert.findAll();
 };
 
-export const getAlertById = async (id) => {
+const getAlertById = async (id) => {
     return await Alert.findByPk(id);
 };
 
-export const updateAlert = async (id, data) => {
+const updateAlert = async (id, data) => {
     const alert = await Alert.findByPk(id);
     if (!alert) return null;
     await alert.update(data);
     return alert;
 };
 
-export const deleteAlert = async (id) => {
+const deleteAlert = async (id) => {
     const alert = await Alert.findByPk(id);
     if (!alert) return false;
     await alert.destroy();
     return true;
 };
 
-export const getRecentAlerts = async ({ limit = 10 }) => {
+const getRecentAlerts = async ({ limit = 10 }) => {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     return await Alert.findAll({
@@ -80,4 +80,13 @@ export const getRecentAlerts = async ({ limit = 10 }) => {
             },
         ],
     });
+};
+
+module.exports = {
+    createAlert,
+    getAllAlerts,
+    getAlertById,
+    updateAlert,
+    deleteAlert,
+    getRecentAlerts,
 };

@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
 
-export const Camera = sequelize.define("Camera", {
+const Camera = sequelize.define("Camera", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -44,3 +44,5 @@ export const Camera = sequelize.define("Camera", {
     underscored: true,
     timestamps: true,
 });
+
+module.exports = { Camera };

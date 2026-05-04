@@ -1,7 +1,7 @@
-import express from "express";
-import * as alertController from "../controllers/alert.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
-import { getDashboardAlertsSummary } from "../controllers/dashboard.controller.js";
+const express = require("express");
+const alertController = require("../controllers/alert.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
+const { getDashboardAlertsSummary } = require("../controllers/dashboard.controller.js");
 
 const router = express.Router();
 
@@ -16,4 +16,4 @@ router.post("/:id/review", protect, alertController.reviewAlert);
 router.get("/dashboard/alerts-summary", getDashboardAlertsSummary);
 
 
-export default router;
+module.exports = router;

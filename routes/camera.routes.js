@@ -1,6 +1,6 @@
-import express from "express";
-import * as cameraController from "../controllers/camera.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+const express = require("express");
+const cameraController = require("../controllers/camera.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
 
@@ -11,4 +11,4 @@ router.put("/:id", protect, cameraController.updateCamera);
 router.patch("/:id/settings", protect, cameraController.updateCameraSettings);
 router.delete("/:id", protect, cameraController.deleteCamera);
 
-export default router;
+module.exports = router;

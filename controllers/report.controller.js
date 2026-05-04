@@ -1,15 +1,15 @@
-import { 
+const { 
   getDailyReportData,
   getWeeklyReportData,
   getMonthlyPerformanceReportData,
   getMonthlyAccountReportData
-} from "../services/report.service.js";
+} = require("../services/report.service.js");
 
 /* =========================================================
    📊 DAILY REPORT CONTROLLER
    Query params: severity, date (YYYY-MM-DD)
 ========================================================= */
-export const getDailyReport = async (req, res) => {
+const getDailyReport = async (req, res) => {
   try {
     const severity  = req.query.severity ?? "all";
     const dateParam = req.query.date     ?? null;
@@ -25,7 +25,7 @@ export const getDailyReport = async (req, res) => {
    📊 WEEKLY REPORT CONTROLLER
    Query params: severity, week_start (YYYY-MM-DD)
 ========================================================= */
-export const getWeeklyReport = async (req, res) => {
+const getWeeklyReport = async (req, res) => {
   try {
     const severity       = req.query.severity   ?? "all";
     const weekStartParam = req.query.week_start ?? null;
@@ -41,7 +41,7 @@ export const getWeeklyReport = async (req, res) => {
    📊 MONTHLY PERFORMANCE REPORT CONTROLLER
    Query params: severity, month (YYYY-MM-DD, last day of month)
 ========================================================= */
-export const getMonthlyReport = async (req, res) => {
+const getMonthlyReport = async (req, res) => {
   try {
     const severity   = req.query.severity ?? "all";
     const monthParam = req.query.month    ?? null;
@@ -57,7 +57,7 @@ export const getMonthlyReport = async (req, res) => {
    📊 MONTHLY ACCOUNT REPORT CONTROLLER
    Query params: month (YYYY-MM-DD, last day of month)
 ========================================================= */
-export const getMonthlyAccountReport = async (req, res) => {
+const getMonthlyAccountReport = async (req, res) => {
   try {
     const monthParam = req.query.month ?? null;
     const data = await getMonthlyAccountReportData(monthParam);
@@ -66,4 +66,11 @@ export const getMonthlyAccountReport = async (req, res) => {
     console.error("Monthly account report error:", error);
     res.status(500).json({ message: "Failed to fetch monthly account report" });
   }
+};
+
+module.exports = {
+  getDailyReport,
+  getWeeklyReport,
+  getMonthlyReport,
+  getMonthlyAccountReport,
 };

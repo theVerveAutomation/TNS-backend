@@ -1,5 +1,5 @@
-import express from "express";
-import {
+const express = require("express");
+const {
   getDashboardSummary,
   getDetectionsByType,
   getHourlyTrend,
@@ -12,8 +12,8 @@ import {
   getVideoAnalyticsSummary,
   getTodaySummaryController,
   getAlertsBySeverity,
-  } from "../controllers/analytics.controller.js";
-  import { protect } from "../middleware/auth.middleware.js";
+  } = require("../controllers/analytics.controller.js");
+  const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();                              
 
@@ -30,4 +30,4 @@ router.get("/video-summary", getVideoAnalyticsSummary);
 router.get("/today-summary", protect, getTodaySummaryController);
 router.get("/alerts-by-severity", getAlertsBySeverity);
 
-export default router;
+module.exports = router;

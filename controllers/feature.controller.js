@@ -1,6 +1,6 @@
-import * as featureService from "../services/feature.service.js";
+const featureService = require("../services/feature.service.js");
 
-export const createFeature = async (req, res) => {
+const createFeature = async (req, res) => {
     try {
         const feature = await featureService.createFeature(req.body);
         res.status(201).json({ success: true, feature });
@@ -9,7 +9,7 @@ export const createFeature = async (req, res) => {
     }
 };
 
-export const getAllFeatures = async (req, res) => {
+const getAllFeatures = async (req, res) => {
     try {
         const features = await featureService.getAllFeatures();
         res.json({ success: true, features });
@@ -18,7 +18,7 @@ export const getAllFeatures = async (req, res) => {
     }
 };
 
-export const getFeatureById = async (req, res) => {
+const getFeatureById = async (req, res) => {
     try {
         const feature = await featureService.getFeatureById(req.params.id);
         if (!feature) return res.status(404).json({ success: false, message: "Feature not found" });
@@ -28,7 +28,7 @@ export const getFeatureById = async (req, res) => {
     }
 };
 
-export const updateFeature = async (req, res) => {
+const updateFeature = async (req, res) => {
     try {
         const feature = await featureService.updateFeature(req.params.id, req.body);
         if (!feature) return res.status(404).json({ success: false, message: "Feature not found" });
@@ -38,7 +38,7 @@ export const updateFeature = async (req, res) => {
     }
 };
 
-export const deleteFeature = async (req, res) => {
+const deleteFeature = async (req, res) => {
     try {
         const result = await featureService.deleteFeature(req.params.id);
         if (!result) return res.status(404).json({ success: false, message: "Feature not found" });
@@ -46,4 +46,12 @@ export const deleteFeature = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
+};
+
+module.exports = {
+    createFeature,
+    getAllFeatures,
+    getFeatureById,
+    updateFeature,
+    deleteFeature,
 };

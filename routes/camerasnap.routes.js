@@ -1,6 +1,6 @@
-import express from "express";
-import * as cameraSnapController from "../controllers/camerasnap.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+const express = require("express");
+const cameraSnapController = require("../controllers/camerasnap.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.get("/:id", protect, cameraSnapController.getCameraSnapById);
 router.put("/:id", protect, cameraSnapController.updateCameraSnap);
 router.delete("/:id", protect, cameraSnapController.deleteCameraSnap);
 
-export default router;
+module.exports = router;

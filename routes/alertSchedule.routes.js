@@ -1,13 +1,13 @@
-import express from "express";
-import {
+const express = require("express");
+const {
   getSchedule,
   updateSchedule,
-} from "../controllers/alertSchedule.controller.js";
-import { protect } from "../middleware/auth.middleware.js"; 
+} = require("../controllers/alertSchedule.controller.js");
+const { protect } = require("../middleware/auth.middleware.js"); 
 
 const router = express.Router();
 
 router.get("/", protect, getSchedule);     
 router.post("/", protect, updateSchedule); 
 
-export default router;
+module.exports = router;

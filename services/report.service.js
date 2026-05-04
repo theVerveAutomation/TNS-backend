@@ -1,4 +1,4 @@
-import sequelize from "../config/db.js";
+const sequelize = require("../config/db.js");
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -31,7 +31,7 @@ const parseDate = (dateParam, fallback) => {
    📊 DAILY REPORT SERVICE
    Accepts: date (YYYY-MM-DD) — defaults to today
 ========================================================= */
-export const getDailyReportData = async (severity = "all", dateParam = null) => {
+const getDailyReportData = async (severity = "all", dateParam = null) => {
   try {
     // Resolve the target date — use passed date or today in Colombo time
     const targetDate = dateParam
@@ -156,7 +156,7 @@ export const getDailyReportData = async (severity = "all", dateParam = null) => 
    📊 WEEKLY REPORT SERVICE
    Accepts: weekStart (YYYY-MM-DD) — defaults to current week Monday
 ========================================================= */
-export const getWeeklyReportData = async (severity = "all", weekStartParam = null) => {
+const getWeeklyReportData = async (severity = "all", weekStartParam = null) => {
   try {
     // Resolve week start & end from param or default to current week
     let weekStartISO, weekEndISO;
@@ -300,7 +300,7 @@ export const getWeeklyReportData = async (severity = "all", weekStartParam = nul
    Accepts: month (YYYY-MM-DD, the last day of the target month)
             — defaults to current month
 ========================================================= */
-export const getMonthlyPerformanceReportData = async (severity = "all", monthParam = null) => {
+const getMonthlyPerformanceReportData = async (severity = "all", monthParam = null) => {
   try {
     // Resolve month start/end from param or default to current month
     let start, end, monthLabel;
@@ -541,7 +541,7 @@ export const getMonthlyPerformanceReportData = async (severity = "all", monthPar
             — defaults to current month
    (no severity filter — this is about user accounts)
 ========================================================= */
-export const getMonthlyAccountReportData = async (monthParam = null) => {
+const getMonthlyAccountReportData = async (monthParam = null) => {
   try {
     let start, end, reportMonthLabel;
 
@@ -631,4 +631,11 @@ export const getMonthlyAccountReportData = async (monthParam = null) => {
     console.error("Monthly Account Report FULL ERROR:", error);
     throw error;
   }
+};
+
+module.exports = {
+  getDailyReportData,
+  getWeeklyReportData,
+  getMonthlyPerformanceReportData,
+  getMonthlyAccountReportData,
 };

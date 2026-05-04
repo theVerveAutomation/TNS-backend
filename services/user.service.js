@@ -1,21 +1,21 @@
-import { User } from "../models/User.js";
-import {
+const { User } = require("../models/User.js");
+const {
     getAuthLogsByuserId
-} from "../services/authlog.service.js";
+} = require("../services/authlog.service.js");
 
-export const createUser = async (data) => {
+const createUser = async (data) => {
     return await User.create(data);
 };
 
-export const getAllUsers = async () => {
+const getAllUsers = async () => {
     return await User.findAll();
 };
 
-export const getUserById = async (id) => {
+const getUserById = async (id) => {
     return await User.findByPk(id);
 };
 
-export const updateUser = async (id, data) => {
+const updateUser = async (id, data) => {
     const user = await User.findByPk(id);
     if (!user) return null;
 
@@ -46,9 +46,17 @@ export const updateUser = async (id, data) => {
     return user;
 };
 
-export const deleteUser = async (id) => {
+const deleteUser = async (id) => {
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     await user.destroy();
     return true;
+};
+
+module.exports = {
+    createUser,
+    getAllUsers,
+    getUserById,
+    updateUser,
+    deleteUser,
 };

@@ -1,8 +1,8 @@
-import * as cameraService from "../services/camera.service.js";
-import { buildRtspUrl } from "../utils/rtspBuilder.js";
-import { logAudit } from "../utils/auditLogger.js";
+const cameraService = require("../services/camera.service.js");
+const { buildRtspUrl } = require("../utils/rtspBuilder.js");
+const { logAudit } = require("../utils/auditLogger.js");
 
-export const createCamera = async (req, res) => {
+const createCamera = async (req, res) => {
     try {
         let { name, url, username, password, ip_address, organization_id } = req.body;
 
@@ -76,7 +76,7 @@ export const createCamera = async (req, res) => {
     }
 };
 
-export const getAllCameras = async (req, res) => {
+const getAllCameras = async (req, res) => {
     try {
         const { organization_id } = req.query;
         if (!organization_id) {
@@ -90,7 +90,7 @@ export const getAllCameras = async (req, res) => {
     }
 };
 
-export const getCameraById = async (req, res) => {
+const getCameraById = async (req, res) => {
     try {
         const { organization_id } = req.query;
         const { id } = req.params;
@@ -110,7 +110,7 @@ export const getCameraById = async (req, res) => {
     }
 };
 
-export const updateCamera = async (req, res) => {
+const updateCamera = async (req, res) => {
     try {
         const { id } = req.params;
         const { organization_id } = req.query;
@@ -193,7 +193,7 @@ export const updateCamera = async (req, res) => {
     }
 };
 
-export const updateCameraSettings = async (req, res) => {
+const updateCameraSettings = async (req, res) => {
     try {
         const { id } = req.params;
         const { organization_id } = req.query;
@@ -215,7 +215,7 @@ export const updateCameraSettings = async (req, res) => {
     }
 };
 
-export const deleteCamera = async (req, res) => {
+const deleteCamera = async (req, res) => {
     try {
         const { id } = req.params;
         const { organization_id } = req.query;
@@ -246,4 +246,13 @@ export const deleteCamera = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
+};
+
+module.exports = {
+    createCamera,
+    getAllCameras,
+    getCameraById,
+    updateCamera,
+    updateCameraSettings,
+    deleteCamera,
 };

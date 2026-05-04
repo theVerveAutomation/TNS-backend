@@ -1,6 +1,6 @@
-import { AlertSchedule } from "../models/AlertSchedule.js";
+const { AlertSchedule } = require("../models/AlertSchedule.js");
 
-export const getSchedule = async (req, res) => {
+const getSchedule = async (req, res) => {
   console.log("🧪 GET REQ USER:", req.user);
   const { organizationId } = req.user;
 
@@ -18,7 +18,7 @@ export const getSchedule = async (req, res) => {
   res.json(schedule);
 };
 
-export const updateSchedule = async (req, res) => {
+const updateSchedule = async (req, res) => {
   console.log("🧪 GET REQ USER:", req.user);
   const { organizationId } = req.user;
 
@@ -31,3 +31,5 @@ export const updateSchedule = async (req, res) => {
 
   res.json({ message: "Schedule updated", schedule });
 };
+
+module.exports = { getSchedule, updateSchedule };

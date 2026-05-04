@@ -1,9 +1,5 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require("fs");
+const path = require("path");
 
 // Allow overriding the alerts directory in production via env var.
 // Fallback: the shared storage sits next to the project root (`Tao Nan School`),
@@ -12,7 +8,7 @@ const ALERTS_BASE_DIR = process.env.ALERTS_BASE_DIR
     ? path.resolve(process.env.ALERTS_BASE_DIR)
     : path.resolve(__dirname, '../../shared_storage/alerts');
 
-export const getCameraFolders = () => {
+const getCameraFolders = () => {
     if (!fs.existsSync(ALERTS_BASE_DIR)) return [];
 
     // Read the directories inside /alerts/
@@ -32,7 +28,7 @@ export const getCameraFolders = () => {
     return cameras;
 };
 
-export const getSnapshotsByCamera = (camId) => {
+const getSnapshotsByCamera = (camId) => {
     // NEW PATH LOGIC: shared_storage/alerts/{camId}/snapshots
     const snapshotsDir = path.join(ALERTS_BASE_DIR, camId, 'snapshots');
 
@@ -62,3 +58,5 @@ export const getSnapshotsByCamera = (camId) => {
     // Sort newest first
     return snapshots.sort((a, b) => b.createdAt - a.createdAt);
 };
+
+module.exports = { getCameraFolders, getSnapshotsByCamera };

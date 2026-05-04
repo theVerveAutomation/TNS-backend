@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
 
-export const AlertSchedule = sequelize.define("AlertSchedule", {
+const AlertSchedule = sequelize.define("AlertSchedule", {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -50,3 +50,5 @@ export const AlertSchedule = sequelize.define("AlertSchedule", {
 }, {
   tableName: "alert_schedules",
 });
+
+module.exports = { AlertSchedule };

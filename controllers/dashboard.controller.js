@@ -1,7 +1,7 @@
-import { Alert } from "../models/Alert.js";
-import { Camera } from "../models/Camera.js";
+const { Alert } = require("../models/Alert.js");
+const { Camera } = require("../models/Camera.js");
 
-export const getDashboardAlertsSummary = async (req, res) => {
+const getDashboardAlertsSummary = async (req, res) => {
   try {
     const alerts = await Alert.findAll({
       where: {
@@ -71,3 +71,5 @@ export const getDashboardAlertsSummary = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+module.exports = { getDashboardAlertsSummary };

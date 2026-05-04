@@ -1,14 +1,14 @@
-import os from "os";
-import { Op, fn, col } from "sequelize";
-import sequelize from "../config/db.js";
-import { Alert } from "../models/Alert.js";
-import { Camera } from "../models/Camera.js";
+const os = require("os");
+const { Op, fn, col } = require("sequelize");
+const sequelize = require("../config/db.js");
+const { Alert } = require("../models/Alert.js");
+const { Camera } = require("../models/Camera.js");
 
 // =============================================================================
 // Dashboard Summary
 // =============================================================================
 
-export const getDashboardSummaryService = async () => {
+const getDashboardSummaryService = async () => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -221,7 +221,7 @@ export const getDashboardSummaryService = async () => {
 // Detections by Type  (Pie chart) — filtered to TODAY only
 // =============================================================================
 
-export const getDetectionsByTypeService = async () => {
+const getDetectionsByTypeService = async () => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -247,7 +247,7 @@ export const getDetectionsByTypeService = async () => {
 // Hourly Detection Trend  (Bar chart) — filtered to TODAY only
 // =============================================================================
 
-export const getHourlyTrendService = async () => {
+const getHourlyTrendService = async () => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -288,7 +288,7 @@ export const getHourlyTrendService = async () => {
 // Camera Status
 // =============================================================================
 
-export const getCameraStatusService = async () => {
+const getCameraStatusService = async () => {
   const cameras = await Camera.findAll({
     attributes: ["id", "name", "status"],
     raw: true,
@@ -320,7 +320,7 @@ export const getCameraStatusService = async () => {
 // Today's Summary  (Video Analytics — Summary card)
 // =============================================================================
 
-export const getTodaySummary = async () => {
+const getTodaySummary = async () => {
   // 🕒 Get today's range
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -404,7 +404,7 @@ export const getTodaySummary = async () => {
 // =============================================================================
 // Severity Pie chart
 // =============================================================================
-export const getAlertsBySeverityService = async () => {
+const getAlertsBySeverityService = async () => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -438,4 +438,13 @@ export const getAlertsBySeverityService = async () => {
     severity: key,
     count: map[key],
   }));
+};
+
+module.exports = {
+  getDashboardSummaryService,
+  getDetectionsByTypeService,
+  getHourlyTrendService,
+  getCameraStatusService,
+  getTodaySummary,
+  getAlertsBySeverityService,
 };

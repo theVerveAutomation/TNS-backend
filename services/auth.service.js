@@ -1,11 +1,11 @@
 // services/auth.service.js
-import { hashPassword, comparePassword, validatePassword } from "../utils/password.js";
-import { User } from "../models/User.js";
-import { AuthLog } from "../models/AuthLog.js";
-import { AppError } from "../utils/AppError.js";
-import bcrypt from "bcrypt";
+const { hashPassword, comparePassword, validatePassword } = require("../utils/password.js");
+const { User } = require("../models/User.js");
+const { AuthLog } = require("../models/AuthLog.js");
+const { AppError } = require("../utils/AppError.js");
+const bcrypt = require("bcryptjs");
 
-export const registerUser = async (organizationId = "org02", username, email, password, role) => {
+const registerUser = async (organizationId = "org02", username, email, password, role) => {
     const existingUser = await User.findOne({ where: { organizationId, username } });
     if (existingUser) {
         throw new AppError(409, "User already exists");
@@ -34,7 +34,7 @@ export const registerUser = async (organizationId = "org02", username, email, pa
     };
 };
 
-export const loginUser = async (organizationId = "org02", username, password, req) => {
+const loginUser = async (organizationId = "org02", username, password, req) => {
     const user = await User.findOne({ where: { organizationId, username } });
     if (!user) {
         throw new AppError(404, `User not found with username: ${username}`);
@@ -100,7 +100,7 @@ export const loginUser = async (organizationId = "org02", username, password, re
     };
 };
 
-export const changePassword = async (userId, newPassword) => {
+const changePassword = async (userId, newPassword) => {
     const user = await User.findByPk(userId);
     if (!user) {
         throw new AppError(404, `User not found with id: ${userId}`);
@@ -125,3 +125,5 @@ export const changePassword = async (userId, newPassword) => {
         isFirstLogin: false
     });
 };
+
+module.exports = { registerUser, loginUser, changePassword };

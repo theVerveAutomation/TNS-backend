@@ -1,6 +1,6 @@
 // src/routes/auth.routes.js
-import express from "express";
-import {
+const express = require("express");
+const {
   register,
   login,
   logout,
@@ -11,10 +11,10 @@ import {
   approveResetRequest,
   rejectResetRequest,
   getResetLink,
-  refreshToken,          
-} from "../controllers/auth.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
-import { adminOnly } from "../middleware/adminOnly.middleware.js";
+  refreshToken,
+} = require("../controllers/auth.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
+const { adminOnly } = require("../middleware/adminOnly.middleware.js");
 
 const router = express.Router();
 
@@ -35,4 +35,4 @@ router.get("/reset-requests", protect, adminOnly, getResetRequests);
 router.post("/reset-requests/:id/approve", protect, adminOnly, approveResetRequest);
 router.post("/reset-requests/:id/reject", protect, adminOnly, rejectResetRequest);
 
-export default router;
+module.exports = router;

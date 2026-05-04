@@ -1,7 +1,7 @@
-import * as auditLogService from "../services/auditlog.service.js";
-import { AuditLog, User } from "../models/index.js";
+const auditLogService = require("../services/auditlog.service.js");
+const { AuditLog, User } = require("../models/index.js");
 
-export const createAuditLog = async (req, res) => {
+const createAuditLog = async (req, res) => {
     try {
         const auditLog = await auditLogService.createAuditLog(req.body);
         res.status(201).json({ success: true, auditLog });
@@ -10,9 +10,9 @@ export const createAuditLog = async (req, res) => {
     }
 };
 
-export const getAuditLogs = async (req, res) => {
+const getAuditLogs = async (req, res) => {
   try {
-console.log("INCLUDE CHECK:", AuditLog.associations);
+    console.log("INCLUDE CHECK:", AuditLog.associations);
 
     const logs = await AuditLog.findAll({
       order: [["timestamp", "DESC"]],
@@ -44,7 +44,7 @@ console.log("INCLUDE CHECK:", AuditLog.associations);
   }
 };
 
-export const getAuditLogById = async (req, res) => {
+const getAuditLogById = async (req, res) => {
     try {
         const auditLog = await auditLogService.getAuditLogById(req.params.id);
         if (!auditLog) return res.status(404).json({ success: false, message: "AuditLog not found" });
@@ -54,7 +54,7 @@ export const getAuditLogById = async (req, res) => {
     }
 };
 
-export const updateAuditLog = async (req, res) => {
+const updateAuditLog = async (req, res) => {
     try {
         const auditLog = await auditLogService.updateAuditLog(req.params.id, req.body);
         if (!auditLog) return res.status(404).json({ success: false, message: "AuditLog not found" });
@@ -64,7 +64,7 @@ export const updateAuditLog = async (req, res) => {
     }
 };
 
-export const deleteAuditLog = async (req, res) => {
+const deleteAuditLog = async (req, res) => {
     try {
         const result = await auditLogService.deleteAuditLog(req.params.id);
         if (!result) return res.status(404).json({ success: false, message: "AuditLog not found" });
@@ -72,4 +72,12 @@ export const deleteAuditLog = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
+};
+
+module.exports = {
+    createAuditLog,
+    getAuditLogs,
+    getAuditLogById,
+    updateAuditLog,
+    deleteAuditLog,
 };

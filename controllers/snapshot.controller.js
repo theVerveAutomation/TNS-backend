@@ -1,6 +1,6 @@
-import { getCameraFolders, getSnapshotsByCamera } from '../services/snapshot.service.js';
+const { getCameraFolders, getSnapshotsByCamera } = require("../services/snapshot.service.js");
 
-export const listFolders = (req, res) => {
+const listFolders = (req, res) => {
     try {
         const folders = getCameraFolders();
         res.json(folders);
@@ -10,7 +10,7 @@ export const listFolders = (req, res) => {
     }
 };
 
-export const listSnapshots = (req, res) => {
+const listSnapshots = (req, res) => {
     try {
         const { cameraId } = req.params;
         const snapshots = getSnapshotsByCamera(cameraId);
@@ -20,3 +20,5 @@ export const listSnapshots = (req, res) => {
         res.status(500).send("Server Error");
     }
 };
+
+module.exports = { listFolders, listSnapshots };

@@ -1,11 +1,11 @@
-import { DateTime } from "luxon";
+const { DateTime } = require("luxon");
 
 const toMinutes = (time) => {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 };
 
-export function isWithinSchedule(schedule) {
+function isWithinSchedule(schedule) {
   if (!schedule || !schedule.enabled) return true;
 
   // 🔥 Use Singapore timezone
@@ -40,3 +40,5 @@ export function isWithinSchedule(schedule) {
 
   return true;
 }
+
+module.exports = { isWithinSchedule };

@@ -1,6 +1,6 @@
 // src/middleware/adminOnly.middleware.js
 
-export const adminOnly = (req, res, next) => {
+const adminOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -11,3 +11,5 @@ export const adminOnly = (req, res, next) => {
 
   next();
 };
+
+module.exports = { adminOnly };

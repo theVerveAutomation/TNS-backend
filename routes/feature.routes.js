@@ -1,6 +1,6 @@
-import express from "express";
-import * as featureController from "../controllers/feature.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+const express = require("express");
+const featureController = require("../controllers/feature.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.get("/:id", protect, featureController.getFeatureById);
 router.put("/:id", protect, featureController.updateFeature);
 router.delete("/:id", protect, featureController.deleteFeature);
 
-export default router;
+module.exports = router;

@@ -1,7 +1,7 @@
 // jobs/cron.jobs.js
-import cron from "node-cron";
-import { User } from "../models/User.js";
-import { AuthLog } from "../models/AuthLog.js";
+const cron = require("node-cron");
+const { User } = require("../models/User.js");
+const { AuthLog } = require("../models/AuthLog.js");
 
 // ⛔ Suspend inactive > 90 days
 cron.schedule("0 0 * * *", async () => {

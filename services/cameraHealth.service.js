@@ -1,4 +1,4 @@
-import { Camera } from "../models/Camera.js";
+const { Camera } = require("../models/Camera.js");
 
 const MEDIAMTX_BASE_URL = process.env.MEDIAMTX_URL || "http://localhost:8889";
 
@@ -13,7 +13,7 @@ const checkCamera = async (cameraId) => {
 };
 
 // ✅ Run all camera checks in parallel (fast + non-blocking)
-export const runCameraHealthCheck = async () => {
+const runCameraHealthCheck = async () => {
   const cameras = await Camera.findAll();
 
   await Promise.all(
@@ -30,3 +30,5 @@ export const runCameraHealthCheck = async () => {
     })
   );
 };
+
+module.exports = { runCameraHealthCheck };

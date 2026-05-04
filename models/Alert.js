@@ -1,9 +1,9 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
-import { Camera } from "./Camera.js";
-import { User } from "./User.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
+const { Camera } = require("./Camera.js");
+const { User } = require("./User.js");
 
-export const Alert = sequelize.define("Alert", {
+const Alert = sequelize.define("Alert", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -97,3 +97,5 @@ try {
 } catch (e) {
     // ignore if models load order causes issues
 }
+
+module.exports = { Alert };

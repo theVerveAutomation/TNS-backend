@@ -1,9 +1,9 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
-import { Camera } from "./Camera.js";
-import { User } from "./User.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
+const { Camera } = require("./Camera.js");
+const { User } = require("./User.js");
 
-export const CameraException = sequelize.define("CameraException", {
+const CameraException = sequelize.define("CameraException", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -35,3 +35,5 @@ Camera.hasMany(CameraException, { foreignKey: "cameraId" });
 
 CameraException.belongsTo(User, { foreignKey: "assignedTo" });
 User.hasMany(CameraException, { foreignKey: "assignedTo" });
+
+module.exports = { CameraException };

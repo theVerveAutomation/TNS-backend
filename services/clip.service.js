@@ -1,15 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require("fs");
+const path = require("path");
 
 const ALERTS_BASE_DIR = process.env.ALERTS_BASE_DIR
     ? path.resolve(process.env.ALERTS_BASE_DIR)
     : path.resolve(__dirname, '../../shared_storage/alerts');
 
-export const getCameraFolders = () => {
+const getCameraFolders = () => {
     if (!fs.existsSync(ALERTS_BASE_DIR)) return [];
 
     const items = fs.readdirSync(ALERTS_BASE_DIR, { withFileTypes: true });
@@ -27,7 +23,7 @@ export const getCameraFolders = () => {
     return cameras;
 };
 
-export const getClipsByCamera = (camId) => {
+const getClipsByCamera = (camId) => {
     // Look specifically inside the /clips/ directory for this camera
     const clipsDir = path.join(ALERTS_BASE_DIR, camId, 'clips');
 
@@ -56,3 +52,5 @@ export const getClipsByCamera = (camId) => {
     // Sort newest first
     return clips.sort((a, b) => b.createdAt - a.createdAt);
 };
+
+module.exports = { getCameraFolders, getClipsByCamera };

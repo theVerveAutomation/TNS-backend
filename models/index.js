@@ -1,5 +1,5 @@
-import { User } from "./User.js";
-import { AuditLog } from "./AuditLog.js";
+const { User } = require("./User.js");
+const { AuditLog } = require("./AuditLog.js");
 
 AuditLog.belongsTo(User, {
   foreignKey: "user_id",
@@ -11,4 +11,4 @@ User.hasMany(AuditLog, {
   as: "auditLogs",
 });
 
-export { User, AuditLog };
+module.exports = { User, AuditLog };

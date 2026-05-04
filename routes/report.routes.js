@@ -1,10 +1,10 @@
-import express from "express";
-import { 
+const express = require("express");
+const { 
     getDailyReport,
     getWeeklyReport,
     getMonthlyReport,
     getMonthlyAccountReport
-} from "../controllers/report.controller.js";
+} = require("../controllers/report.controller.js");
 
 const router = express.Router();
 
@@ -13,4 +13,4 @@ router.get("/weekly", getWeeklyReport);
 router.get("/monthly", getMonthlyReport);
 router.get("/account-monthly", getMonthlyAccountReport);
 
-export default router;
+module.exports = router;

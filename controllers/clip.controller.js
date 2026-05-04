@@ -1,6 +1,6 @@
-import { getCameraFolders, getClipsByCamera } from '../services/clip.service.js';
+const { getCameraFolders, getClipsByCamera } = require("../services/clip.service.js");
 
-export const listFolders = (req, res) => {
+const listFolders = (req, res) => {
     try {
         const folders = getCameraFolders();
         res.json(folders);
@@ -10,7 +10,7 @@ export const listFolders = (req, res) => {
     }
 };
 
-export const listClips = (req, res) => {
+const listClips = (req, res) => {
     try {
         const { cameraId } = req.params;
         const clips = getClipsByCamera(cameraId);
@@ -20,3 +20,5 @@ export const listClips = (req, res) => {
         res.status(500).send("Server Error");
     }
 };
+
+module.exports = { listFolders, listClips };

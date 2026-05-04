@@ -1,5 +1,5 @@
-import express from 'express'; // Depending on your setup, it might just be 'express'
-import { streamMedia } from '../controllers/media.controller.js';
+const express = require("express"); // Depending on your setup, it might just be 'express'
+const { streamMedia } = require("../controllers/media.controller.js");
 
 const router = express.Router();
 
@@ -7,4 +7,4 @@ const router = express.Router();
 // This will resolve to GET /api/media (or wherever you mount it in index.js)
 router.get('/', streamMedia);
 
-export default router;
+module.exports = router;

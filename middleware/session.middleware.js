@@ -1,7 +1,7 @@
 // middleware/session.middleware.js
-import { User } from "../models/User.js";
+const { User } = require("../models/User.js");
 
-export const sessionTimeout = async (req, res, next) => {
+const sessionTimeout = async (req, res, next) => {
     const user = req.user;
 
     const now = Date.now();
@@ -24,3 +24,5 @@ export const sessionTimeout = async (req, res, next) => {
 
     next();
 };
+
+module.exports = { sessionTimeout };

@@ -1,5 +1,5 @@
-import express from 'express';
-import { listFolders, listSnapshots } from '../controllers/snapshot.controller.js';
+const express = require("express");
+const { listFolders, listSnapshots } = require("../controllers/snapshot.controller.js");
 
 const router = express.Router();
 
@@ -9,4 +9,4 @@ router.get('/folders', listFolders);
 // GET /api/snapshots/camera/:cameraId -> Returns images for that camera
 router.get('/camera/:cameraId', listSnapshots);
 
-export default router;
+module.exports = router;

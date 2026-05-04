@@ -1,4 +1,4 @@
-export const buildRtspUrl = ({ username, password, ip }) => {
+const buildRtspUrl = ({ username, password, ip }) => {
     const template = process.env.RTSP_TEMPLATE;
 
     if (!template) {
@@ -10,3 +10,5 @@ export const buildRtspUrl = ({ username, password, ip }) => {
         .replace("{password}", password)
         .replace("{ip}", ip);
 };
+
+module.exports = { buildRtspUrl };

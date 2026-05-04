@@ -1,6 +1,6 @@
-import express from "express";
-import * as cameraExceptionController from "../controllers/cameraexception.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+const express = require("express");
+const cameraExceptionController = require("../controllers/cameraexception.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.get("/:id", protect, cameraExceptionController.getCameraExceptionById);
 router.put("/:id", protect, cameraExceptionController.updateCameraException);
 router.delete("/:id", protect, cameraExceptionController.deleteCameraException);
 
-export default router;
+module.exports = router;

@@ -1,6 +1,6 @@
-import express from "express";
-import * as authLogController from "../controllers/authlog.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+const express = require("express");
+const authLogController = require("../controllers/authlog.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.get("/:id", protect, authLogController.getAuthLogById);
 router.put("/:id", protect, authLogController.updateAuthLog);
 router.delete("/:id", protect, authLogController.deleteAuthLog);
 
-export default router;
+module.exports = router;

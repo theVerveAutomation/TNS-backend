@@ -1,9 +1,9 @@
 // controllers/audit.controller.js
-import { AuditLog, User } from "../models/index.js";
+const { AuditLog, User } = require("../models/index.js");
 
-export const getAuditLogs = async (req, res) => {
+const getAuditLogs = async (req, res) => {
   try {
-console.log("INCLUDE CHECK:", AuditLog.associations);
+    console.log("INCLUDE CHECK:", AuditLog.associations);
 
     const logs = await AuditLog.findAll({
       order: [["timestamp", "DESC"]],
@@ -34,3 +34,5 @@ console.log("INCLUDE CHECK:", AuditLog.associations);
     res.status(500).json({ message: "Error fetching audit logs" });
   }
 };
+
+module.exports = { getAuditLogs };// controllers/audit.controller.js

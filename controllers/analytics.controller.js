@@ -1,17 +1,17 @@
-import {
+const {
     getDashboardSummaryService,
     getDetectionsByTypeService,
     getHourlyTrendService,
     getCameraStatusService,
     getTodaySummary,
     getAlertsBySeverityService,
-} from "../services/analytics.service.js";
-import sequelize from "../config/db.js";
-import { Camera } from "../models/Camera.js";
-import { Alert } from "../models/Alert.js";
-import { Op } from "sequelize";
-import fs from "fs";
-import path from "path";
+} = require("../services/analytics.service.js");
+const sequelize = require("../config/db.js");
+const { Camera } = require("../models/Camera.js");
+const { Alert } = require("../models/Alert.js");
+const { Op } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
 
 // ───────────────────────────────
 // Helpers: Folder Size
@@ -49,7 +49,7 @@ const formatBytes = (bytes) => {
 // ───────────────────────────────
 // Dashboard (legacy services)
 // ───────────────────────────────
-export const getDashboardSummary = async (req, res) => {
+const getDashboardSummary = async (req, res) => {
     try {
         const data = await getDashboardSummaryService();
         res.json(data);
@@ -59,7 +59,7 @@ export const getDashboardSummary = async (req, res) => {
     }
 };
 
-export const getDetectionsByType = async (req, res) => {
+const getDetectionsByType = async (req, res) => {
     try {
         const data = await getDetectionsByTypeService();
         res.json(data);
@@ -69,7 +69,7 @@ export const getDetectionsByType = async (req, res) => {
     }
 };
 
-export const getHourlyTrend = async (req, res) => {
+const getHourlyTrend = async (req, res) => {
     try {
         const data = await getHourlyTrendService();
         res.json(data);
@@ -79,7 +79,7 @@ export const getHourlyTrend = async (req, res) => {
     }
 };
 
-export const getCameraStatus = async (req, res) => {
+const getCameraStatus = async (req, res) => {
     try {
         const data = await getCameraStatusService();
         res.json(data);
@@ -92,7 +92,7 @@ export const getCameraStatus = async (req, res) => {
 // ───────────────────────────────
 // Metrics
 // ───────────────────────────────
-export const getMetrics = async (req, res) => {
+const getMetrics = async (req, res) => {
     try {
         const { start, end } = req.query;
 
@@ -133,7 +133,7 @@ export const getMetrics = async (req, res) => {
 // ───────────────────────────────
 // Detection Trends
 // ───────────────────────────────
-export const getDetectionTrends = async (req, res) => {
+const getDetectionTrends = async (req, res) => {
     try {
         const { start, end } = req.query;
 
@@ -159,7 +159,7 @@ export const getDetectionTrends = async (req, res) => {
 // ───────────────────────────────
 // Hourly Activity
 // ───────────────────────────────
-export const getHourlyActivity = async (req, res) => {
+const getHourlyActivity = async (req, res) => {
     try {
         const { start, end } = req.query;
 
@@ -189,7 +189,7 @@ export const getHourlyActivity = async (req, res) => {
 // ───────────────────────────────
 // Comparison (Week-over-Week / Year-over-Year)
 // ───────────────────────────────
-export const getComparison = async (req, res) => {
+const getComparison = async (req, res) => {
     try {
         const { start, end } = req.query;
 
@@ -275,7 +275,7 @@ export const getComparison = async (req, res) => {
 // ───────────────────────────────
 // Camera Performance
 // ───────────────────────────────
-export const getCameraPerformance = async (req, res) => {
+const getCameraPerformance = async (req, res) => {
     try {
         const [results] = await sequelize.query(`
             SELECT 
@@ -309,7 +309,7 @@ export const getCameraPerformance = async (req, res) => {
 // ───────────────────────────────
 // Video Analytics Summary
 // ───────────────────────────────
-export const getVideoAnalyticsSummary = async (req, res, next) => {
+const getVideoAnalyticsSummary = async (req, res, next) => {
     try {
         // 1. Cameras
         const cameras = await Camera.findAll();
@@ -399,7 +399,7 @@ export const getVideoAnalyticsSummary = async (req, res, next) => {
     }
 };
 
-export const getTodaySummaryController = async (req, res) => {
+const getTodaySummaryController = async (req, res) => {
   try {
     const data = await getTodaySummary();
     res.status(200).json(data);
@@ -409,7 +409,7 @@ export const getTodaySummaryController = async (req, res) => {
   }
 };
 
-export const getAlertsBySeverity = async (req, res) => {
+const getAlertsBySeverity = async (req, res) => {
   try {
     const data = await getAlertsBySeverityService();
     res.json(data);
@@ -417,4 +417,19 @@ export const getAlertsBySeverity = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch severity data" });
   }
+};
+
+module.exports = {
+    getDashboardSummary,
+    getDetectionsByType,
+    getHourlyTrend,
+    getCameraStatus,
+    getMetrics,
+    getDetectionTrends,
+    getHourlyActivity,
+    getComparison,
+    getCameraPerformance,
+    getVideoAnalyticsSummary,
+    getTodaySummaryController,
+    getAlertsBySeverity,
 };

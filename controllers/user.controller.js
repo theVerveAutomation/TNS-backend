@@ -1,8 +1,8 @@
 // src/controllers/user.controller.js
-import * as userService from "../services/user.service.js";
-import { logAudit } from "../utils/auditLogger.js";
+const userService = require("../services/user.service.js");
+const { logAudit } = require("../utils/auditLogger.js");
 
-export const createUser = async (req, res) => {
+const createUser = async (req, res) => {
   try {
     const newUser = await userService.createUser(req.body);
 
@@ -24,7 +24,7 @@ export const createUser = async (req, res) => {
   }
 };
 
-export const getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     const users = await userService.getAllUsers();
     res.json({ success: true, users });
@@ -33,7 +33,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-export const getUserById = async (req, res) => {
+const getUserById = async (req, res) => {
   try {
     const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
@@ -43,7 +43,7 @@ export const getUserById = async (req, res) => {
   }
 };
 
-export const updateUser = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
     const existingUser = await userService.getUserById(req.params.id);
     if (!existingUser) return res.status(404).json({ success: false, message: "User not found" });
@@ -71,7 +71,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
-export const deleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
   try {
     const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
@@ -99,4 +99,12 @@ export const deleteUser = async (req, res) => {
     console.error("Error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
+};
+
+module.exports = {
+  createUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
 };

@@ -1,10 +1,10 @@
-import * as alertService from "../services/alert.service.js";
-import { Alert } from "../models/Alert.js";
-import { User } from "../models/User.js";
-import { Camera } from "../models/Camera.js"; 
-import { logAudit } from "../utils/auditLogger.js";
+const alertService = require("../services/alert.service.js");
+const { Alert } = require("../models/Alert.js");
+const { User } = require("../models/User.js");
+const { Camera } = require("../models/Camera.js");
+const { logAudit } = require("../utils/auditLogger.js");
 
-export const createAlert = async (req, res) => {
+const createAlert = async (req, res) => {
     console.log("📥 Incoming Alert from Worker:", req.body);
 
     try {
@@ -24,7 +24,7 @@ export const createAlert = async (req, res) => {
         if (req.body.imagePath && !req.body.snapshotPath) req.body.snapshotPath = req.body.imagePath;
 
         if (req.body.snapshotUrl && !req.body.snapshotPath) req.body.snapshotPath = req.body.snapshotUrl;
-        if (req.body.videoUrl   && !req.body.videoPath)    req.body.videoPath    = req.body.videoUrl;
+        if (req.body.videoUrl && !req.body.videoPath) req.body.videoPath = req.body.videoUrl;
 
         console.log("📸 Resolved snapshotPath:", req.body.snapshotPath);
 
@@ -65,7 +65,7 @@ export const createAlert = async (req, res) => {
     }
 };
 
-export const getAllAlerts = async (req, res) => {
+const getAllAlerts = async (req, res) => {
     try {
         const alerts = await Alert.findAll({
             include: [
@@ -83,7 +83,7 @@ export const getAllAlerts = async (req, res) => {
     }
 };
 
-export const getAlertById = async (req, res) => {
+const getAlertById = async (req, res) => {
     try {
         const alert = await alertService.getAlertById(req.params.id);
         if (!alert) {
@@ -96,7 +96,7 @@ export const getAlertById = async (req, res) => {
     }
 };
 
-export const updateAlert = async (req, res) => {
+const updateAlert = async (req, res) => {
     try {
         const alert = await alertService.updateAlert(req.params.id, req.body);
         if (!alert) {
@@ -109,7 +109,7 @@ export const updateAlert = async (req, res) => {
     }
 };
 
-export const deleteAlert = async (req, res) => {
+const deleteAlert = async (req, res) => {
     try {
         const result = await alertService.deleteAlert(req.params.id);
         if (!result) {
@@ -122,7 +122,7 @@ export const deleteAlert = async (req, res) => {
     }
 };
 
-export const getRecentAlerts = async (req, res) => {
+const getRecentAlerts = async (req, res) => {
     try {
         const { limit = 10 } = req.query;
         const alerts = await alertService.getRecentAlerts({ limit });
@@ -133,7 +133,7 @@ export const getRecentAlerts = async (req, res) => {
     }
 };
 
-export const reviewAlert = async (req, res) => {
+const reviewAlert = async (req, res) => {
     try {
         const { id } = req.params;
         const { accuracy, notes } = req.body;
@@ -150,13 +150,13 @@ export const reviewAlert = async (req, res) => {
 
         const oldAlert = alert.toJSON();
 
-        alert.isReviewed        = true;
-        alert.validationStatus  = accuracy === "valid" ? "Valid" : "False Alarm";
-        alert.actionTaken       = notes;
-        alert.acknowledgedBy    = req.user.id;
-        alert.responseTimeMin   = responseTime;
-        alert.status            = "Closed";
-        alert.validation        = accuracy;
+        alert.isReviewed = true;
+        alert.validationStatus = accuracy === "valid" ? "Valid" : "False Alarm";
+        alert.actionTaken = notes;
+        alert.acknowledgedBy = req.user.id;
+        alert.responseTimeMin = responseTime;
+        alert.status = "Closed";
+        alert.validation = accuracy;
         await alert.save();
 
         await logAudit({
@@ -185,7 +185,7 @@ export const reviewAlert = async (req, res) => {
     }
 };
 
-export const getEventLogs = async (req, res) => {
+const getEventLogs = async (req, res) => {
     try {
         const logs = await Alert.findAll({
             where: { isReviewed: true },
@@ -202,4 +202,15 @@ export const getEventLogs = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: "Error fetching event logs" });
     }
+};
+
+module.exports = {
+    createAlert,
+    getAllAlerts,
+    getAlertById,
+    updateAlert,
+    deleteAlert,
+    getRecentAlerts,
+    reviewAlert,
+    getEventLogs,
 };

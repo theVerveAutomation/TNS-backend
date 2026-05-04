@@ -1,8 +1,8 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
-import { User } from "./User.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
+const { User } = require("./User.js");
 
-export const AuditLog = sequelize.define("AuditLog", {
+const AuditLog = sequelize.define("AuditLog", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -56,4 +56,6 @@ export const AuditLog = sequelize.define("AuditLog", {
     underscored: true,
     timestamps: false, 
 });
+
+module.exports = { AuditLog };
 

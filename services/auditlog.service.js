@@ -1,27 +1,35 @@
-import { AuditLog } from "../models/AuditLog.js";
+const { AuditLog } = require("../models/AuditLog.js");
 
-export const createAuditLog = async (data) => {
+const createAuditLog = async (data) => {
     return await AuditLog.create(data);
 };
 
-export const getAllAuditLogs = async () => {
+const getAllAuditLogs = async () => {
     return await AuditLog.findAll();
 };
 
-export const getAuditLogById = async (id) => {
+const getAuditLogById = async (id) => {
     return await AuditLog.findByPk(id);
 };
 
-export const updateAuditLog = async (id, data) => {
+const updateAuditLog = async (id, data) => {
     const auditLog = await AuditLog.findByPk(id);
     if (!auditLog) return null;
     await auditLog.update(data);
     return auditLog;
 };
 
-export const deleteAuditLog = async (id) => {
+const deleteAuditLog = async (id) => {
     const auditLog = await AuditLog.findByPk(id);
     if (!auditLog) return false;
     await auditLog.destroy();
     return true;
+};
+
+module.exports = {
+    createAuditLog,
+    getAllAuditLogs,
+    getAuditLogById,
+    updateAuditLog,
+    deleteAuditLog,
 };

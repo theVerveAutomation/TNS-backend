@@ -1,8 +1,10 @@
 // middleware/rateLimiter.js
-import rateLimit from "express-rate-limit";
+const rateLimit = require("express-rate-limit");
 
-export const loginLimiter = rateLimit({
+const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100
 });
+
+module.exports = { loginLimiter };
 

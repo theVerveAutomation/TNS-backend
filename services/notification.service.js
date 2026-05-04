@@ -1,13 +1,13 @@
-import notifier from "node-notifier";
-import path from "path";
-import { getIO } from "../socket.js";
-import { AlertSchedule } from "../models/AlertSchedule.js";
-import { isWithinSchedule } from "../utils/scheduleChecker.js";
-import { Camera } from "../models/Camera.js";
+const notifier = require("node-notifier");
+const path = require("path");
+const { getIO } = require("../socket.js");
+const { AlertSchedule } = require("../models/AlertSchedule.js");
+const { isWithinSchedule } = require("../utils/scheduleChecker.js");
+const { Camera } = require("../models/Camera.js");
 
 const iconPath = path.resolve("assets/logo2.png");
 
-export const sendAlertNotification = async (alert) => {
+const sendAlertNotification = async (alert) => {
   const camera = await Camera.findByPk(alert.cameraId);
 
   if (!camera) {
@@ -66,3 +66,5 @@ export const sendAlertNotification = async (alert) => {
     }
   );
 };
+
+module.exports = { sendAlertNotification };

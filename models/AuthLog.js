@@ -1,8 +1,8 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
-import { User } from "./User.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
+const { User } = require("./User.js");
 
-export const AuthLog = sequelize.define("AuthLog", {
+const AuthLog = sequelize.define("AuthLog", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -24,6 +24,8 @@ export const AuthLog = sequelize.define("AuthLog", {
 }, {
     timestamps: true,
 });
+
+module.exports = { AuthLog };
 
 // Define relationship
 // AuthLog.belongsTo(User, { foreignKey: "userId" });

@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
 
-export const Feature = sequelize.define("Feature", {
+const Feature = sequelize.define("Feature", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -28,3 +28,5 @@ export const Feature = sequelize.define("Feature", {
     underscored: true,
     timestamps: true,
 });
+
+module.exports = { Feature };

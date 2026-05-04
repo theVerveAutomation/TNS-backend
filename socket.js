@@ -1,8 +1,8 @@
-import { Server } from "socket.io";
+const { Server } = require("socket.io");
 
 let io;
 
-export const initSocket = (server) => {
+const initSocket = (server) => {
   io = new Server(server, {
     cors: {
       origin: "*",
@@ -14,7 +14,9 @@ export const initSocket = (server) => {
   });
 };
 
-export const getIO = () => {
+const getIO = () => {
   if (!io) throw new Error("Socket not initialized");
   return io;
 };
+
+module.exports = { initSocket, getIO };

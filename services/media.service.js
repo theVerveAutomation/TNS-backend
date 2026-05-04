@@ -1,9 +1,5 @@
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const path = require("path");
+const fs = require("fs");
 
 // Use the same ALERTS_BASE_DIR env override as other services, with a safe
 // fallback to the nearby shared_storage folder for development.
@@ -11,7 +7,7 @@ const SHARED_STORAGE_DIR = process.env.ALERTS_BASE_DIR
     ? path.resolve(process.env.ALERTS_BASE_DIR)
     : path.resolve(__dirname, '../../shared_storage/alerts');
 
-export const getSafeMediaFilePath = (dbPath) => {
+const getSafeMediaFilePath = (dbPath) => {
     if (!dbPath) {
         throw new Error('MISSING_PATH');
     }
@@ -32,3 +28,5 @@ export const getSafeMediaFilePath = (dbPath) => {
 
     return absoluteFilePath;
 };
+
+module.exports = { getSafeMediaFilePath };

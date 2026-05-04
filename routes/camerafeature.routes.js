@@ -1,6 +1,6 @@
-import express from "express";
-import * as cameraFeatureController from "../controllers/camerafeature.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+const express = require("express");
+const cameraFeatureController = require("../controllers/camerafeature.controller.js");
+const { protect } = require("../middleware/auth.middleware.js");
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.get("/:id", protect, cameraFeatureController.getCameraFeatureById);
 router.put("/:id", protect, cameraFeatureController.updateCameraFeature);
 router.delete("/:id", protect, cameraFeatureController.deleteCameraFeature);
 
-export default router;
+module.exports = router;

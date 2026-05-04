@@ -1,6 +1,6 @@
-import { getSafeMediaFilePath } from '../services/media.service.js';
+const { getSafeMediaFilePath } = require("../services/media.service.js");
 
-export const streamMedia = (req, res) => {
+const streamMedia = (req, res) => {
     try {
         const dbPath = req.query.path; // e.g., "/alerts/clips/cam1_tussle.mp4"
         console.log("dbpath", dbPath)
@@ -32,3 +32,5 @@ export const streamMedia = (req, res) => {
         }
     }
 };
+
+module.exports = { streamMedia };

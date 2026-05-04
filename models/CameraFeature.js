@@ -1,9 +1,9 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
-import { Camera } from "./Camera.js";
-import { Feature } from "./feature.js";
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db.js");
+const { Camera } = require("./Camera.js");
+const { Feature } = require("./feature.js");
 
-export const CameraFeature = sequelize.define("CameraFeature", {
+const CameraFeature = sequelize.define("CameraFeature", {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -31,3 +31,5 @@ export const CameraFeature = sequelize.define("CameraFeature", {
 // Define Many-to-Many Relationships
 Camera.belongsToMany(Feature, { through: CameraFeature, foreignKey: "cameraId" });
 Feature.belongsToMany(Camera, { through: CameraFeature, foreignKey: "featureId" });
+
+module.exports = { CameraFeature };

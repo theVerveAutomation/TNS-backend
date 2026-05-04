@@ -1,23 +1,23 @@
 // src/controllers/auth.controller.js
-import jwt from "jsonwebtoken";                          
-import {
+const jwt = require("jsonwebtoken");
+const {
   registerUser,
   loginUser,
-  changePassword as changePasswordService,
-} from "../services/auth.service.js";
-import { User } from "../models/User.js";
-import { generateToken, generateRefreshToken } from "../utils/token.js";
-import {
+  changePassword: changePasswordService,
+} = require("../services/auth.service.js");
+const { User } = require("../models/User.js");
+const { generateToken, generateRefreshToken } = require("../utils/token.js");
+const {
   requestPasswordReset,
   resetPasswordService,
   approvePasswordResetRequest,
   rejectPasswordResetRequest,
-} from "../services/passwordReset.service.js";
-import { PasswordResetRequest } from "../models/PasswordResetRequest.js";
-import { logAudit } from "../utils/auditLogger.js";
+} = require("../services/passwordReset.service.js");
+const { PasswordResetRequest } = require("../models/PasswordResetRequest.js");
+const { logAudit } = require("../utils/auditLogger.js");
 
 // ── Register ──────────────────────────────────────────────────────────────────
-export const register = async (req, res) => {
+const register = async (req, res) => {
   try {
     const { organizationId, username, email, password, role } = req.body;
     const user = await registerUser(organizationId, username, email, password, role);
@@ -29,7 +29,7 @@ export const register = async (req, res) => {
 };
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-export const login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { organizationId, username, password } = req.body;
     const { user, forcePasswordChange } = await loginUser(organizationId, username, password, req);
@@ -74,7 +74,7 @@ export const login = async (req, res) => {
 };
 
 // ── Refresh Token ─────────────────────────────────────────────────────────────
-export const refreshToken = async (req, res) => {
+const refreshToken = async (req, res) => {
   try {
     const { refresh_token } = req.body;
 
@@ -100,7 +100,7 @@ export const refreshToken = async (req, res) => {
 };
 
 // ── Change Password ───────────────────────────────────────────────────────────
-export const changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
   try {
     const { newPassword, userId } = req.body;
     await changePasswordService(userId, newPassword);
@@ -112,7 +112,7 @@ export const changePassword = async (req, res) => {
 };
 
 // ── Logout ────────────────────────────────────────────────────────────────────
-export const logout = async (req, res) => {
+const logout = async (req, res) => {
   try {
     await logAudit({
       userId: req.user.id,
@@ -134,7 +134,7 @@ export const logout = async (req, res) => {
 };
 
 // ── Forgot Password ───────────────────────────────────────────────────────────
-export const forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res) => {
   try {
     const { username } = req.body;
 
@@ -155,7 +155,7 @@ export const forgotPassword = async (req, res) => {
 };
 
 // ── Reset Password ────────────────────────────────────────────────────────────
-export const resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
@@ -172,7 +172,7 @@ export const resetPassword = async (req, res) => {
 };
 
 // ── GET /auth/reset-requests ──────────────────────────────────────────────────
-export const getResetRequests = async (req, res) => {
+const getResetRequests = async (req, res) => {
   try {
     const organizationId = req.user?.organizationId;
 
@@ -189,7 +189,7 @@ export const getResetRequests = async (req, res) => {
 };
 
 // ── POST /auth/reset-requests/:id/approve ────────────────────────────────────
-export const approveResetRequest = async (req, res) => {
+const approveResetRequest = async (req, res) => {
   try {
     const { id } = req.params;
     const resetLink = await approvePasswordResetRequest(id);
@@ -201,7 +201,7 @@ export const approveResetRequest = async (req, res) => {
 };
 
 // ── POST /auth/reset-requests/:id/reject ─────────────────────────────────────
-export const rejectResetRequest = async (req, res) => {
+const rejectResetRequest = async (req, res) => {
   try {
     const { id } = req.params;
     await rejectPasswordResetRequest(id);
@@ -213,7 +213,7 @@ export const rejectResetRequest = async (req, res) => {
 };
 
 // ── GET reset link ────────────────────────────────────────────────────────────
-export const getResetLink = async (req, res) => {
+const getResetLink = async (req, res) => {
   try {
     const { username } = req.body;
 
@@ -242,4 +242,18 @@ export const getResetLink = async (req, res) => {
     console.error("Error in getResetLink:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
+};
+
+module.exports = {
+  register,
+  login,
+  refreshToken,
+  changePassword,
+  logout,
+  forgotPassword,
+  resetPassword,
+  getResetRequests,
+  approveResetRequest,
+  rejectResetRequest,
+  getResetLink,
 };
